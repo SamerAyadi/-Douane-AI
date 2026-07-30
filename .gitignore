@@ -1,13 +1,7 @@
 venv/
-
-__pycache__/
-
-*.pyc
-
 .env
-
 chroma_db/
-
-.vscode/
-
+__pycache__/
 data/processed/
+data/raw/
+data/Raw/
