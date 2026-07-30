@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -10,14 +11,15 @@ except ImportError:
     import fitz as pymupdf
 
 from src.core.config import (
-    RAW_DATA_DIR,
     CHROMA_DB_DIR,
+    CHUNK_OVERLAP,
+    CHUNK_SIZE,
     COLLECTION_NAME,
     EMBEDDING_MODEL,
-    CHUNK_SIZE,
-    CHUNK_OVERLAP,
+    RAW_DATA_DIR,
     create_required_directories,
 )
+from src.rag.language import detect_language, text_quality
 
 
 def load_pdf_pages(file_path: Path) -> list[dict[str, Any]]:
@@ -77,10 +79,20 @@ def build_chunks() -> tuple[list[str], list[dict[str, Any]], list[str]]:
 
     for pdf_file in pdf_files:
         pages = load_pdf_pages(pdf_file)
+        document_text = "\n".join(page["text"] for page in pages)
+        document_language, _ = detect_language(
+            document_text,
+            filename=pdf_file.name,
+        )
 
         for page in pages:
             page_text = page["text"]
             page_metadata = page["metadata"]
+            page_language, _ = detect_language(
+                page_text,
+                filename=pdf_file.name,
+                default=document_language,
+            )
 
             chunks = split_text(
                 text=page_text,
@@ -89,6 +101,13 @@ def build_chunks() -> tuple[list[str], list[dict[str, Any]], list[str]]:
             )
 
             for chunk_index, chunk in enumerate(chunks):
+                chunk_language, language_source = detect_language(
+                    chunk,
+                    filename=pdf_file.name,
+                    default=page_language,
+                )
+                quality = text_quality(chunk, chunk_language)
+
                 documents.append(chunk)
 
                 metadatas.append(
@@ -97,6 +116,10 @@ def build_chunks() -> tuple[list[str], list[dict[str, Any]], list[str]]:
                         "path": page_metadata["path"],
                         "page": page_metadata["page"],
                         "chunk": chunk_index,
+                        "language": chunk_language,
+                        "language_source": language_source,
+                        "readable": quality["readable"],
+                        "arabic_ratio": quality["arabic_ratio"],
                     }
                 )
 
@@ -111,12 +134,49 @@ def build_chunks() -> tuple[list[str], list[dict[str, Any]], list[str]]:
     return documents, metadatas, ids
 
 
+def print_extraction_quality(
+    documents: list[str],
+    metadatas: list[dict[str, Any]],
+) -> None:
+    by_source: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {
+            "language": "unknown",
+            "total": 0,
+            "readable": 0,
+            "preview": "",
+        }
+    )
+
+    for document, metadata in zip(documents, metadatas):
+        source = str(metadata.get("source", "Unknown source"))
+        stats = by_source[source]
+        stats["language"] = metadata.get("language", "unknown")
+        stats["total"] += 1
+        stats["readable"] += int(bool(metadata.get("readable")))
+        if not stats["preview"]:
+            stats["preview"] = " ".join(document.split())[:100]
+
+    print("\nExtraction quality:")
+    for source, stats in sorted(by_source.items()):
+        print(
+            f"- {source}: language={stats['language']}, "
+            f"readable_chunks={stats['readable']}/{stats['total']}"
+        )
+        if stats["language"] == "ar" and stats["readable"] == 0:
+            print(
+                "  WARNING: no real Arabic Unicode text was extracted. "
+                "This PDF likely requires Arabic-capable OCR."
+            )
+        print(f"  Preview: {stats['preview']}")
+
+
 def ingest_documents() -> None:
     create_required_directories()
 
     documents, metadatas, ids = build_chunks()
 
     print(f"Loaded {len(documents)} text chunks from PDF files.")
+    print_extraction_quality(documents, metadatas)
 
     embedding_model = SentenceTransformer(EMBEDDING_MODEL)
 

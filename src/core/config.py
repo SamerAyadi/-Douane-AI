@@ -31,6 +31,12 @@ CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "150"))
 
 TOP_K = int(os.getenv("TOP_K", "2"))
 
+MAX_CONTEXT_CHARS = int(os.getenv("MAX_CONTEXT_CHARS", "5000"))
+MAX_CONTEXT_CHUNK_CHARS = int(os.getenv("MAX_CONTEXT_CHUNK_CHARS", "1800"))
+MAX_ANSWER_WORDS = int(os.getenv("MAX_ANSWER_WORDS", "120"))
+OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "4096"))
+OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "220"))
+
 
 SUPPORTED_EXTENSIONS = [".pdf", ".docx"]
 
