@@ -1,8 +1,11 @@
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 import chromadb
+import pytesseract
+from PIL import Image
 from sentence_transformers import SentenceTransformer
 
 try:
@@ -16,33 +19,79 @@ from src.core.config import (
     CHUNK_SIZE,
     COLLECTION_NAME,
     EMBEDDING_MODEL,
+    OCR_ENABLED,
+    OCR_LANGUAGES,
     RAW_DATA_DIR,
+    TESSERACT_CMD,
     create_required_directories,
 )
 from src.rag.language import detect_language, text_quality
 
 
+def ocr_page(page: Any, file_path: Path, page_number: int) -> str:
+    print(f"OCR: processing {file_path.name}, page {page_number} ({OCR_LANGUAGES})")
+
+    if TESSERACT_CMD:
+        pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+
+    pixmap = page.get_pixmap(
+        matrix=pymupdf.Matrix(300 / 72, 300 / 72),
+        colorspace=pymupdf.csRGB,
+        alpha=False,
+    )
+    image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
+
+    try:
+        return pytesseract.image_to_string(
+            image,
+            lang=OCR_LANGUAGES,
+        ).strip()
+    except pytesseract.TesseractNotFoundError as error:
+        raise RuntimeError(
+            "Tesseract OCR was not found. Install Tesseract or set "
+            "TESSERACT_CMD in .env."
+        ) from error
+    except pytesseract.TesseractError as error:
+        raise RuntimeError(
+            f"OCR failed for {file_path.name}, page {page_number}: {error}. "
+            "Make sure the Arabic and French language data are installed."
+        ) from error
+    finally:
+        image.close()
+
+
 def load_pdf_pages(file_path: Path) -> list[dict[str, Any]]:
     pages = []
-
     document = pymupdf.open(file_path)
 
-    for page_number, page in enumerate(document, start=1):
-        text = page.get_text("text").strip()
+    try:
+        for page_number, page in enumerate(document, start=1):
+            text = page.get_text("text").strip()
+            extraction_method = "text"
 
-        if text:
-            pages.append(
-                {
-                    "text": text,
-                    "metadata": {
-                        "source": file_path.name,
-                        "path": str(file_path),
-                        "page": page_number,
-                    },
-                }
-            )
+            if not text and OCR_ENABLED:
+                text = ocr_page(page, file_path, page_number)
+                extraction_method = "ocr"
 
-    document.close()
+            if text:
+                pages.append(
+                    {
+                        "text": text,
+                        "metadata": {
+                            "source": file_path.name,
+                            "path": str(file_path),
+                            "page": page_number,
+                            "extraction_method": extraction_method,
+                        },
+                    }
+                )
+            elif OCR_ENABLED:
+                print(
+                    f"WARNING: OCR returned no text for "
+                    f"{file_path.name}, page {page_number}."
+                )
+    finally:
+        document.close()
 
     return pages
 
@@ -72,17 +121,36 @@ def build_chunks() -> tuple[list[str], list[dict[str, Any]], list[str]]:
     metadatas = []
     ids = []
 
-    pdf_files = sorted(RAW_DATA_DIR.glob("*.pdf"))
+    pdf_files = sorted(
+        (
+            path
+            for path in RAW_DATA_DIR.rglob("*")
+            if path.is_file() and path.suffix.casefold() == ".pdf"
+        ),
+        key=lambda path: path.as_posix().casefold(),
+    )
 
     if not pdf_files:
         raise FileNotFoundError(f"No PDF files found in: {RAW_DATA_DIR}")
 
     for pdf_file in pdf_files:
+        relative_path = pdf_file.relative_to(RAW_DATA_DIR).as_posix()
+        folder_name = pdf_file.parent.name.casefold()
+        folder_language = folder_name if folder_name in {"ar", "fr"} else "unknown"
         pages = load_pdf_pages(pdf_file)
+
+        if not pages:
+            print(
+                f"WARNING: no usable text found in {relative_path}. "
+                "OCR is disabled or returned no text."
+            )
+            continue
+
         document_text = "\n".join(page["text"] for page in pages)
         document_language, _ = detect_language(
             document_text,
             filename=pdf_file.name,
+            default=folder_language,
         )
 
         for page in pages:
@@ -114,7 +182,9 @@ def build_chunks() -> tuple[list[str], list[dict[str, Any]], list[str]]:
                     {
                         "source": page_metadata["source"],
                         "path": page_metadata["path"],
+                        "relative_path": relative_path,
                         "page": page_metadata["page"],
+                        "extraction_method": page_metadata["extraction_method"],
                         "chunk": chunk_index,
                         "language": chunk_language,
                         "language_source": language_source,
@@ -124,12 +194,17 @@ def build_chunks() -> tuple[list[str], list[dict[str, Any]], list[str]]:
                 )
 
                 chunk_id = (
-                    f"{page_metadata['source']}"
+                    f"{relative_path}"
                     f"_page_{page_metadata['page']}"
                     f"_chunk_{chunk_index}"
                 )
 
                 ids.append(chunk_id)
+
+    if not documents:
+        raise ValueError(
+            f"PDF files were found in {RAW_DATA_DIR}, but none contained extractable text."
+        )
 
     return documents, metadatas, ids
 
@@ -214,5 +289,20 @@ def ingest_documents() -> None:
     print(f"ChromaDB path: {CHROMA_DB_DIR}")
 
 
+def main() -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8")
+
+    try:
+        ingest_documents()
+    except (FileNotFoundError, RuntimeError, ValueError) as error:
+        print(f"Ingestion stopped: {error}", file=sys.stderr)
+        return 1
+
+    return 0
+
+
 if __name__ == "__main__":
-    ingest_documents()
+    raise SystemExit(main())

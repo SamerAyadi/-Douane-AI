@@ -440,7 +440,7 @@ if __name__ == "__main__":
         sys.stdout.reconfigure(encoding="utf-8")
 
     rag_chain = RAGChain()
-    question = "ما هي قواعد تعويض المصاريف المهنية؟"
+    question = "ما هي الملاحظات التفسيرية للفصول المتعلقة بالقيمة لدى الديوانة؟"
     result = rag_chain.ask(question)
 
     print("\nQuestion:")

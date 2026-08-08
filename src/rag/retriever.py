@@ -181,7 +181,7 @@ if __name__ == "__main__":
 
     retriever = DocumentRetriever()
 
-    question = "ما هي قواعد تعويض المصاريف المهنية؟"
+    question = "ما هي الملاحظات التفسيرية للفصول المتعلقة بالقيمة لدى الديوانة؟"
 
     results = retriever.search(question)
 

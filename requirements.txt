@@ -1,0 +1,9 @@
+beautifulsoup4
+chromadb
+PyMuPDF
+pytesseract
+Pillow
+python-dotenv
+requests
+sentence-transformers
+truststore

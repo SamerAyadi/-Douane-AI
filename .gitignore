@@ -1,7 +1,10 @@
-venv/
 .env
-chroma_db/
+venv/
 __pycache__/
-data/processed/
+*.py[cod]
+
+# Local and official document data must never be committed.
 data/raw/
-data/Raw/
+data/processed/
+data/metadata/
+chroma_db/
