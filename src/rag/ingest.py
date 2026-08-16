@@ -116,12 +116,8 @@ def split_text(text: str, chunk_size: int, chunk_overlap: int) -> list[str]:
     return chunks
 
 
-def build_chunks() -> tuple[list[str], list[dict[str, Any]], list[str]]:
-    documents = []
-    metadatas = []
-    ids = []
-
-    pdf_files = sorted(
+def find_pdf_files() -> list[Path]:
+    return sorted(
         (
             path
             for path in RAW_DATA_DIR.rglob("*")
@@ -129,6 +125,41 @@ def build_chunks() -> tuple[list[str], list[dict[str, Any]], list[str]]:
         ),
         key=lambda path: path.as_posix().casefold(),
     )
+
+
+def build_chunk_metadata(
+    chunk: str,
+    page_metadata: dict[str, Any],
+    relative_path: str,
+    chunk_index: int,
+    default_language: str,
+) -> dict[str, Any]:
+    chunk_language, language_source = detect_language(
+        chunk,
+        filename=page_metadata["source"],
+        default=default_language,
+    )
+    quality = text_quality(chunk, chunk_language)
+
+    return {
+        "source": page_metadata["source"],
+        "path": page_metadata["path"],
+        "relative_path": relative_path,
+        "page": page_metadata["page"],
+        "extraction_method": page_metadata["extraction_method"],
+        "chunk": chunk_index,
+        "language": chunk_language,
+        "language_source": language_source,
+        "readable": quality["readable"],
+        "arabic_ratio": quality["arabic_ratio"],
+    }
+
+def build_chunks() -> tuple[list[str], list[dict[str, Any]], list[str]]:
+    documents = []
+    metadatas = []
+    ids = []
+
+    pdf_files = find_pdf_files()
 
     if not pdf_files:
         raise FileNotFoundError(f"No PDF files found in: {RAW_DATA_DIR}")
@@ -169,28 +200,15 @@ def build_chunks() -> tuple[list[str], list[dict[str, Any]], list[str]]:
             )
 
             for chunk_index, chunk in enumerate(chunks):
-                chunk_language, language_source = detect_language(
-                    chunk,
-                    filename=pdf_file.name,
-                    default=page_language,
-                )
-                quality = text_quality(chunk, chunk_language)
-
                 documents.append(chunk)
-
                 metadatas.append(
-                    {
-                        "source": page_metadata["source"],
-                        "path": page_metadata["path"],
-                        "relative_path": relative_path,
-                        "page": page_metadata["page"],
-                        "extraction_method": page_metadata["extraction_method"],
-                        "chunk": chunk_index,
-                        "language": chunk_language,
-                        "language_source": language_source,
-                        "readable": quality["readable"],
-                        "arabic_ratio": quality["arabic_ratio"],
-                    }
+                    build_chunk_metadata(
+                        chunk=chunk,
+                        page_metadata=page_metadata,
+                        relative_path=relative_path,
+                        chunk_index=chunk_index,
+                        default_language=page_language,
+                    )
                 )
 
                 chunk_id = (

@@ -25,6 +25,17 @@ chroma_db/                  # local vector database (ignored by Git)
 
 Scraping is deliberately independent from ingestion and generation. `ingest.py` recursively reads every PDF under `data/raw/`, including the official language subfolders.
 
+## How to explain the project
+
+The application follows four simple steps:
+
+1. **Scraping:** download official PDFs and save their metadata.
+2. **Ingestion:** extract normal PDF text, use OCR for scanned pages, split the text into chunks, and store their embeddings in ChromaDB.
+3. **Retrieval:** embed the user's question and retrieve the most relevant readable chunks, preferring the same language.
+4. **Generation:** send only the retrieved context to local Qwen3 through Ollama, then return a short Arabic or French answer with the real source and page.
+
+All processing stays local. The modules keep separate responsibilities, while `python -m src.rag.ingest`, `python -m src.rag.retriever`, and `python -m src.rag.chain` form the complete RAG workflow.
+
 ## Setup
 
 Activate the existing virtual environment and install dependencies:

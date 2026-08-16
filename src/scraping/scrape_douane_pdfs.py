@@ -138,7 +138,7 @@ def find_pdf_url(row: Tag, page_url: str) -> str | None:
     return None
 
 
-def language_marker(value: str) -> str | None:
+def detect_filename_language_marker(value: str) -> str | None:
     parsed = urlparse(value)
     filename = Path(parsed.path).stem.casefold()
     tokens = set(filter(None, re.split(r"[_\-\s./]+", filename)))
@@ -151,7 +151,7 @@ def language_marker(value: str) -> str | None:
 
 
 def detect_record_language(title: str, pdf_url: str, page_url: str) -> str:
-    pdf_language = language_marker(pdf_url)
+    pdf_language = detect_filename_language_marker(pdf_url)
     if pdf_language:
         return pdf_language
 
@@ -174,7 +174,7 @@ def detect_record_language(title: str, pdf_url: str, page_url: str) -> str:
     return "fr"
 
 
-def cell_value(cells: list[Tag], index: int | None) -> str:
+def get_cell_text(cells: list[Tag], index: int | None) -> str:
     if index is None or index >= len(cells):
         return ""
     return clean_text(cells[index].get_text(" ", strip=True))
@@ -234,15 +234,15 @@ def parse_document_table(html: bytes | str, page_url: str) -> list[DocumentRecor
                 continue
 
             values = [clean_text(cell.get_text(" ", strip=True)) for cell in cells]
-            document_number = cell_value(
+            document_number = get_cell_text(
                 cells,
                 header_mapping.get("document_number"),
             ) or fallback_document_number(values, pdf_url)
-            date = cell_value(
+            date = get_cell_text(
                 cells,
                 header_mapping.get("date"),
             ) or fallback_date(values)
-            title = cell_value(
+            title = get_cell_text(
                 cells,
                 header_mapping.get("title"),
             ) or fallback_title(values, document_number, date)
@@ -346,7 +346,7 @@ def load_existing_metadata() -> dict[str, dict[str, str]]:
         }
 
 
-def metadata_row(
+def build_metadata_row(
     record: DocumentRecord,
     local_path: Path,
     scraped_at: str,
@@ -473,24 +473,22 @@ def scrape_douane_pdfs(
         previous_row = existing_metadata.get(record.pdf_url)
         previous_path = existing_local_path(previous_row) if previous_row else None
 
+        existing_path = None
+        existing_scraped_at = scraped_at
         if previous_path and previous_path.exists():
-            existing_metadata[record.pdf_url] = metadata_row(
-                record,
-                previous_path,
-                previous_row.get("scraped_at", "") or scraped_at,
-            )
-            summary.skipped += 1
-            print(f"[exists] {previous_path.name}")
-            continue
+            existing_path = previous_path
+            existing_scraped_at = previous_row.get("scraped_at", "") or scraped_at
+        elif destination.exists():
+            existing_path = destination
 
-        if destination.exists():
-            existing_metadata[record.pdf_url] = metadata_row(
+        if existing_path:
+            existing_metadata[record.pdf_url] = build_metadata_row(
                 record,
-                destination,
-                scraped_at,
+                existing_path,
+                existing_scraped_at,
             )
             summary.skipped += 1
-            print(f"[exists] {destination.name}")
+            print(f"[exists] {existing_path.name}")
             continue
 
         try:
@@ -503,7 +501,7 @@ def scrape_douane_pdfs(
             )
             continue
 
-        existing_metadata[record.pdf_url] = metadata_row(
+        existing_metadata[record.pdf_url] = build_metadata_row(
             record,
             destination,
             scraped_at,
