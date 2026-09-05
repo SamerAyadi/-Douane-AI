@@ -8,3 +8,4 @@ data/raw/
 data/processed/
 data/metadata/
 chroma_db/
+evaluation/results/

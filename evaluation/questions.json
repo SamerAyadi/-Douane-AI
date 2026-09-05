@@ -1,0 +1,222 @@
+[
+  {
+    "id": "Q01",
+    "language": "ar",
+    "question": "ما هي الملاحظات التفسيرية للفصول المتعلقة بالقيمة لدى الديوانة؟",
+    "expected_document": "019_2026",
+    "expected_pages": [5, 20],
+    "expected_facts": [
+      "الفصول من 22 إلى 35",
+      "القيمة لدى الديوانة",
+      "ترتيب تتابعي لتحديد القيمة"
+    ],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "multi_section"
+  },
+  {
+    "id": "Q02",
+    "language": "ar",
+    "question": "ما هو موضوع النص عدد 020 لسنة 2026؟",
+    "expected_document": "020_2026",
+    "expected_pages": [1],
+    "expected_facts": [
+      "منح الترخيص بسياقة المعدات السيارة والشاحنة",
+      "الموردة في إطار إنجاز مشروع"
+    ],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "document_number"
+  },
+  {
+    "id": "Q03",
+    "language": "ar",
+    "question": "هل تخضع المعدات الخاصة والجرارات الفلاحية لهذا الإجراء؟",
+    "expected_document": "020_2026",
+    "expected_pages": [1],
+    "expected_facts": [
+      "المعدات الخاصة",
+      "الجرارات الفلاحية",
+      "العربات المجرورة",
+      "آلات الحصاد"
+    ],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "semantic"
+  },
+  {
+    "id": "Q04",
+    "language": "ar",
+    "question": "ما هو موضوع قرار وزير الصحة المؤرخ في 14 ماي 2026؟",
+    "expected_document": "021_2026",
+    "expected_pages": [1],
+    "expected_facts": ["ضبط قائمة بدائل لبن الأم"],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "direct"
+  },
+  {
+    "id": "Q05",
+    "language": "ar",
+    "question": "هل منتج Aptamil AR 1 موجود في قائمة بدائل لبن الأم؟",
+    "expected_document": "021_2026",
+    "expected_pages": [2],
+    "expected_facts": ["Aptamil AR 1"],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "mixed_language_product"
+  },
+  {
+    "id": "Q06",
+    "language": "ar",
+    "question": "هل منتج Gallia AR II موجود في القائمة؟",
+    "expected_document": "021_2026",
+    "expected_pages": [3],
+    "expected_facts": ["Gallia AR II"],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "mixed_language_product"
+  },
+  {
+    "id": "Q07",
+    "language": "ar",
+    "question": "ما هي الدول التي انضمت إلى مبادرة التجارة الموجهة في النص عدد 022؟",
+    "expected_document": "022_2026",
+    "expected_pages": [1],
+    "expected_facts": ["جنوب إفريقيا", "المغرب", "نيجيريا"],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "direct"
+  },
+  {
+    "id": "Q08",
+    "language": "ar",
+    "question": "ما هي نسب التفكيك التدريجي للرسوم المذكورة في النص عدد 022؟",
+    "expected_document": "022_2026",
+    "expected_pages": [2, 3],
+    "expected_facts": ["40%", "30%", "20%", "10%", "إلغاء الرسوم المتبقية"],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "multi_section"
+  },
+  {
+    "id": "Q09",
+    "language": "ar",
+    "question": "ما هو رمز وثيقة الامتياز الجبائي المذكور في النص عدد 022؟",
+    "expected_document": "022_2026",
+    "expected_pages": [3],
+    "expected_facts": ["404", "401", "الخانة 42"],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "direct"
+  },
+  {
+    "id": "Q10",
+    "language": "ar",
+    "question": "من هو الشخص الذي تمت تسميته في النص عدد 023؟",
+    "expected_document": "023_2026",
+    "expected_pages": [1],
+    "expected_facts": ["شاكر الوسلاتي"],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "document_number"
+  },
+  {
+    "id": "Q11",
+    "language": "ar",
+    "question": "ما هو موضوع النص عدد 024 لسنة 2026؟",
+    "expected_document": "024_2026",
+    "expected_pages": [1],
+    "expected_facts": [
+      "إتمام القرار المؤرخ في 21 أوت 2023",
+      "قائمة المنتجات المختصة بها الدولة",
+      "أسعارها"
+    ],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "document_number"
+  },
+  {
+    "id": "Q12",
+    "language": "ar",
+    "question": "ما هي بعض المنتجات الموجودة في جدول الملحق للنص عدد 024؟",
+    "expected_document": "024_2026",
+    "expected_pages": [2],
+    "expected_facts": ["قوافل أحمر", "قوافل ذهبي", "مالبورو", "تربليا"],
+    "minimum_fact_matches": 3,
+    "answer_available": true,
+    "type": "answerable",
+    "category": "direct"
+  },
+  {
+    "id": "Q13",
+    "language": "fr",
+    "question": "Quel est le sujet principal du texte 019 de 2026 ?",
+    "expected_document": "019_2026",
+    "expected_pages": [1, 5],
+    "expected_facts": ["notes explicatives", "valeur en douane"],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "document_number"
+  },
+  {
+    "id": "Q14",
+    "language": "fr",
+    "question": "Le texte 020 concerne-t-il les autorisations de conduite ?",
+    "expected_document": "020_2026",
+    "expected_pages": [1],
+    "expected_facts": [
+      "autorisation de conduite",
+      "véhicules ou camions importés",
+      "projet"
+    ],
+    "answer_available": true,
+    "type": "answerable",
+    "category": "semantic"
+  },
+  {
+    "id": "Q15",
+    "language": "fr",
+    "question": "Donne trois exemples de produits figurant dans la liste des substituts du lait maternel.",
+    "expected_document": "021_2026",
+    "expected_pages": [2, 3, 4, 5, 6, 7],
+    "expected_facts": ["Aptamil", "Gallia", "Nan", "Novalac"],
+    "minimum_fact_matches": 3,
+    "answer_available": true,
+    "type": "answerable",
+    "category": "multi_section"
+  },
+  {
+    "id": "Q16",
+    "language": "ar",
+    "question": "هل تحتوي الوثائق على معلومات حول تعويض المصاريف المهنية؟",
+    "expected_document": null,
+    "expected_pages": [],
+    "expected_facts": [],
+    "answer_available": false,
+    "type": "absent",
+    "category": "absent"
+  },
+  {
+    "id": "Q17",
+    "language": "ar",
+    "question": "هل يتحدث النص عدد 019 عن أسعار السجائر؟",
+    "expected_document": null,
+    "expected_pages": [],
+    "expected_facts": [],
+    "answer_available": false,
+    "type": "absent",
+    "category": "absent"
+  },
+  {
+    "id": "Q18",
+    "language": "ar",
+    "question": "هل يحدد القرار عدد 021 أسعار بدائل لبن الأم؟",
+    "expected_document": null,
+    "expected_pages": [],
+    "expected_facts": [],
+    "answer_available": false,
+    "type": "absent",
+    "category": "absent"
+  }
+]

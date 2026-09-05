@@ -1,3 +1,4 @@
+import re
 import sys
 
 from typing import Any
@@ -12,6 +13,24 @@ from src.core.config import (
     TOP_K,
 )
 from src.rag.language import detect_question_language
+DOCUMENT_NUMBER_PATTERNS = (
+    re.compile(r"(?<!\d)(\d{1,4})\s*[_-]\s*(\d{4})(?!\d)"),
+    re.compile(r"(?<!\d)(\d{1,4})\s*(?:لسنة|سنة)\s*(\d{4})(?!\d)"),
+)
+ARABIC_INDIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+
+
+def _document_number_prefix(question: str) -> str | None:
+    normalized_question = question.translate(ARABIC_INDIC_DIGITS)
+
+    for pattern in DOCUMENT_NUMBER_PATTERNS:
+        match = pattern.search(normalized_question)
+        if match:
+            document_number, year = match.groups()
+            return f"{document_number.zfill(3)}_{year}"
+
+    return None
+
 
 
 def _language_filter(language: str) -> dict[str, Any]:
@@ -121,16 +140,36 @@ class DocumentRetriever:
             f"query: {question}",
             normalize_embeddings=True,
         ).tolist()
+        document_prefix = _document_number_prefix(question)
+        document_chunks = []
+        if document_prefix:
+            candidate_count = min(max(top_k * 10, 20), total_documents)
+            candidates = self._query_collection(
+                query_embedding=query_embedding,
+                top_k=candidate_count,
+            )
+            document_chunks = [
+                chunk
+                for chunk in candidates
+                if document_prefix
+                in str((chunk.get("metadata") or {}).get("source", ""))
+                and (chunk.get("metadata") or {}).get("readable") is not False
+            ]
+
+
 
         preferred_chunks = self._safe_filtered_query(
             query_embedding=query_embedding,
             top_k=top_k,
             where=_language_filter(question_language),
         )
-        if len(preferred_chunks) >= top_k:
-            return preferred_chunks
-
-        selected_chunks = preferred_chunks
+        selected_chunks = _merge_unique(
+            document_chunks,
+            preferred_chunks,
+            top_k,
+        )
+        if len(selected_chunks) >= top_k:
+            return selected_chunks
 
         if question_language == "ar":
             french_fallback = self._safe_filtered_query(
@@ -181,8 +220,7 @@ if __name__ == "__main__":
 
     retriever = DocumentRetriever()
 
-    question = "ما هي الملاحظات التفسيرية للفصول المتعلقة بالقيمة لدى الديوانة؟"
-
+    question = "ما الإجراء المطلوب عند تسوية المعدات أو الشاحنة الموردة في إطار الامتيازات الجبائية؟"
     results = retriever.search(question)
 
     print(f"\nQuestion: {question}")
