@@ -30,6 +30,15 @@ UNAVAILABLE_PHRASES = (
     "non disponible",
     "not available",
     "not found",
+    "لا توجد معلومات",
+    "لا يحتوي",
+    "لا تحتوي",
+    "لا يتحدث",
+    "لا يحدد",
+    "n'est pas présente",
+    "ne contient aucune information",
+    "aucune information",
+    "does not contain",
 )
 
 
