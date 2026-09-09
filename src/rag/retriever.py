@@ -28,6 +28,9 @@ DOCUMENT_NUMBER_PATTERNS = (
 )
 ARABIC_INDIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 LANGUAGE_PREFERENCE_BONUS = 0.005
+DISTANCE_GAP_THRESHOLD = 0.02
+WEAK_LANGUAGE_MATCH_THRESHOLD = 0.18
+MAX_CONTEXT_CHUNKS = 4
 
 
 def _document_number_prefix(question: str) -> str | None:
@@ -98,6 +101,81 @@ def _rank_chunks(
         return float(chunk.get("distance", 1.0)) - language_bonus
 
     return sorted(unique_chunks, key=ranking_score)[:limit]
+
+
+def _source(chunk: dict[str, Any]) -> object:
+    return (chunk.get("metadata") or {}).get("source")
+
+
+def _select_context_chunks(
+    ranked_chunks: list[dict[str, Any]],
+    requested_top_k: int,
+    expand_separated_pages: bool = False,
+) -> list[dict[str, Any]]:
+    """Keep the usual top results, with a small same-document expansion."""
+    selected = ranked_chunks[:requested_top_k]
+    if len(selected) < 2:
+        return selected
+
+    first, second = selected[:2]
+    if _source(first) == _source(second):
+        first_page = (first.get("metadata") or {}).get("page")
+        second_page = (second.get("metadata") or {}).get("page")
+        pages_are_neighbors = (
+            isinstance(first_page, int)
+            and isinstance(second_page, int)
+            and abs(first_page - second_page) <= 1
+        )
+        if not pages_are_neighbors and not expand_separated_pages:
+            return selected
+
+        selected_pages = {
+            (chunk.get("metadata") or {}).get("page") for chunk in selected
+        }
+        nearby_chunks = []
+        for chunk in ranked_chunks:
+            if _source(chunk) != _source(first):
+                continue
+            page = (chunk.get("metadata") or {}).get("page")
+            if page in selected_pages or any(
+                isinstance(page, int)
+                and isinstance(selected_page, int)
+                and abs(page - selected_page) == 1
+                for selected_page in selected_pages
+            ):
+                nearby_chunks.append(chunk)
+        return nearby_chunks[:MAX_CONTEXT_CHUNKS]
+
+    distance_gap = float(second.get("distance", 1.0)) - float(
+        first.get("distance", 1.0)
+    )
+    if distance_gap >= DISTANCE_GAP_THRESHOLD:
+        return [first]
+
+    return selected
+
+
+def _cross_language_fallback(
+    chunks: list[dict[str, Any]],
+    preferred_language: str,
+    limit: int = 2,
+) -> list[dict[str, Any]]:
+    """Return the best chunks from distinct sources in another language."""
+    fallback = []
+    seen_sources = set()
+    for chunk in sorted(
+        chunks,
+        key=lambda item: float(item.get("distance", 1.0)),
+    ):
+        metadata = chunk.get("metadata") or {}
+        source = metadata.get("source")
+        if metadata.get("language") == preferred_language or source in seen_sources:
+            continue
+        seen_sources.add(source)
+        fallback.append(chunk)
+        if len(fallback) >= limit:
+            break
+    return fallback
 
 
 class DocumentRetriever:
@@ -220,7 +298,7 @@ class DocumentRetriever:
             top_k=top_k,
             where=_language_filter(question_language),
         )
-        candidate_count = min(max(top_k * 5, 10), total_documents)
+        candidate_count = min(max(top_k * 10, 20), total_documents)
         multilingual_chunks = self._query_collection(
             query_embedding=query_embedding,
             top_k=candidate_count,
@@ -230,11 +308,40 @@ class DocumentRetriever:
             for chunk in multilingual_chunks
             if (chunk.get("metadata") or {}).get("readable") is not False
         ]
-        return _rank_chunks(
+        ranked_chunks = _rank_chunks(
             preferred_chunks + readable_chunks,
             preferred_language=question_language,
-            limit=top_k,
+            limit=candidate_count,
         )
+        mixed_language_terms = (
+            question_language == "ar"
+            and bool(re.search(r"[A-Za-z]{2,}", question))
+        )
+        selected_chunks = _select_context_chunks(
+            ranked_chunks,
+            top_k,
+            expand_separated_pages=mixed_language_terms,
+        )
+
+        best_preferred_distance = min(
+            (
+                float(chunk.get("distance", 1.0))
+                for chunk in preferred_chunks
+            ),
+            default=1.0,
+        )
+        if best_preferred_distance > WEAK_LANGUAGE_MATCH_THRESHOLD:
+            fallback = _cross_language_fallback(
+                readable_chunks,
+                preferred_language=question_language,
+            )
+            selected_chunks = _merge_unique(
+                selected_chunks[:top_k],
+                fallback,
+                MAX_CONTEXT_CHUNKS,
+            )
+
+        return selected_chunks
 
 
 if __name__ == "__main__":

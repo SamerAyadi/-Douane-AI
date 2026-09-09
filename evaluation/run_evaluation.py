@@ -18,7 +18,7 @@ RESULTS_FILE = EVALUATION_DIR / "results" / "evaluation_results.json"
 
 ARABIC_DIACRITICS = re.compile(r"[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06ed]")
 COMMON_PUNCTUATION = re.compile(r"""[.,;:!?؟،؛…"’‘“”'()\[\]{}<>«»/\\|_-]+""")
-ARABIC_PREFIXED_ARTICLE = re.compile(r"\b(?:لل|[وفبك]ال)(?=[\u0621-\u064a])")
+ARABIC_PREFIXED_ARTICLE = re.compile(r"\b(?:لل|ال|[وفبك]ال)(?=[\u0621-\u064a])")
 ARABIC_ALEF_TRANSLATION = str.maketrans({"أ": "ا", "إ": "ا", "آ": "ا"})
 UNAVAILABLE_PHRASES = (
     "غير متوفر",
@@ -68,11 +68,12 @@ def select_questions(
 
 
 def normalize_text(value: object) -> str:
-    text = unicodedata.normalize("NFKC", str(value)).casefold()
+    text = unicodedata.normalize("NFKD", str(value)).casefold()
+    text = "".join(character for character in text if not unicodedata.combining(character))
     text = ARABIC_DIACRITICS.sub("", text).replace("ـ", "")
     text = text.translate(ARABIC_ALEF_TRANSLATION)
     text = COMMON_PUNCTUATION.sub(" ", text)
-    text = ARABIC_PREFIXED_ARTICLE.sub("ال", text)
+    text = ARABIC_PREFIXED_ARTICLE.sub("", text)
     return " ".join(text.split())
 
 
@@ -125,44 +126,55 @@ def check_expected_facts(
     fact_matches = {
         fact: normalize_text(fact) in normalized_answer for fact in expected_facts
     }
-    match_ratio = (
-        sum(fact_matches.values()) / len(expected_facts)
-        if expected_facts
-        else 0.0
-    )
-    facts_correct = match_ratio >= 0.70
+    matched_count = sum(fact_matches.values())
+    match_ratio = matched_count / len(expected_facts) if expected_facts else 0.0
+    minimum_matches = question.get("minimum_fact_matches")
+    if minimum_matches is None:
+        minimum_matches = max(1, (len(expected_facts) * 7 + 9) // 10)
+    facts_correct = matched_count >= minimum_matches
     return fact_matches, round(match_ratio, 3), facts_correct
+
+
+def _has_citation(answer: str) -> bool:
+    return "المصدر" in answer or "source" in answer.casefold()
 
 
 def check_unavailable_answer(answer: str) -> bool:
     normalized_answer = normalize_text(answer)
-    return any(
+    has_unavailable_phrase = any(
         normalize_text(phrase) in normalized_answer
         for phrase in UNAVAILABLE_PHRASES
     )
+    return has_unavailable_phrase and not _has_citation(answer)
 
 
-def check_citation(answer: str, sources: list[dict[str, Any]]) -> bool:
-    normalized_answer = normalize_text(answer)
-    citation_present = "المصدر" in answer or "source" in answer.casefold()
-    if not citation_present:
+def check_answer_language(expected_language: str, answer: str) -> bool:
+    arabic_count = len(re.findall(r"[\u0600-\u06ff]", answer))
+    latin_count = len(re.findall(r"[A-Za-z\u00c0-\u00ff]", answer))
+    if expected_language == "ar":
+        return arabic_count > 0 and arabic_count >= latin_count
+    if expected_language == "fr":
+        return latin_count > 0 and latin_count > arabic_count
+    return True
+
+
+def check_citation(question: dict[str, Any], answer: str) -> bool:
+    if not _has_citation(answer):
         return False
 
-    for source in sources:
-        source_name = Path(str(source.get("source") or "")).name
-        page = source.get("page")
-        if not source_name or page is None:
-            continue
+    expected_document = normalize_text(question.get("expected_document") or "")
+    if expected_document and expected_document not in normalize_text(answer):
+        return False
 
-        source_present = normalize_text(source_name) in normalized_answer
-        page_pattern = re.compile(
+    expected_pages = question.get("expected_pages") or []
+    return any(
+        re.search(
             rf"(?:page|الصفحة)\s*[:#-]?\s*{re.escape(str(page))}\b",
+            answer,
             flags=re.IGNORECASE,
         )
-        if source_present and page_pattern.search(answer):
-            return True
-
-    return False
+        for page in expected_pages
+    )
 
 
 def build_summary(results: list[dict[str, Any]], mode: str) -> dict[str, Any]:
@@ -203,8 +215,13 @@ def build_summary(results: list[dict[str, Any]], mode: str) -> dict[str, Any]:
         citations_correct = sum(
             result.get("citation_honest") is True for result in answerable
         )
-        passed_checks += facts_correct + absent_correct + citations_correct
-        applicable_checks += len(answerable) * 2 + len(absent)
+        language_correct = sum(
+            result.get("answer_language_correct") is True for result in results
+        )
+        passed_checks += (
+            facts_correct + absent_correct + citations_correct + language_correct
+        )
+        applicable_checks += len(answerable) * 2 + len(absent) + len(results)
         summary.update(
             {
                 "answer_key_facts_matched": {
@@ -219,6 +236,11 @@ def build_summary(results: list[dict[str, Any]], mode: str) -> dict[str, Any]:
                     "count": citations_correct,
                     "out_of": len(answerable),
                 },
+                "answer_language_correct": {
+                    "count": language_correct,
+                    "out_of": len(results),
+                },
+                "unsupported_absent_answers": len(absent) - absent_correct,
             }
         )
 
@@ -248,9 +270,15 @@ def print_summary(summary: dict[str, Any], mode: str) -> None:
         facts = summary["answer_key_facts_matched"]
         absent = summary["absent_questions_handled"]
         citations = summary["honest_source_citations"]
+        language = summary["answer_language_correct"]
         print(f"Answer key facts matched: {facts['count']}/{facts['out_of']}")
         print(f"Absent questions handled: {absent['count']}/{absent['out_of']}")
         print(f"Honest source citations: {citations['count']}/{citations['out_of']}")
+        print(f"Answer language correct: {language['count']}/{language['out_of']}")
+        print(
+            "Unsupported absent answers: "
+            f"{summary['unsupported_absent_answers']}"
+        )
 
     print(f"Overall score: {summary['overall_score_percent']}%")
     print(f"Results saved to: {RESULTS_FILE}")
@@ -314,14 +342,20 @@ def run_evaluation(
                     result["fact_matches"] = fact_matches
                     result["fact_match_ratio"] = fact_match_ratio
                     result["answer_facts_correct"] = facts_correct
-                    result["citation_honest"] = check_citation(answer, sources)
+                    result["citation_honest"] = check_citation(question, answer)
                     result["absent_answer_correct"] = None
+                    result["answer_language_correct"] = check_answer_language(
+                        question["language"], answer
+                    )
                 else:
                     result["fact_matches"] = {}
                     result["fact_match_ratio"] = None
                     result["answer_facts_correct"] = None
                     result["citation_honest"] = None
                     result["absent_answer_correct"] = check_unavailable_answer(answer)
+                    result["answer_language_correct"] = check_answer_language(
+                        question["language"], answer
+                    )
 
             retrieval_label = (
                 "N/A"
@@ -360,6 +394,7 @@ def run_evaluation(
                 result.setdefault("answer_facts_correct", False)
                 result.setdefault("citation_honest", False)
                 result.setdefault("absent_answer_correct", False)
+                result.setdefault("answer_language_correct", False)
             print(f"  ERROR: {result['error']}")
 
         results.append(result)

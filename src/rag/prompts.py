@@ -5,15 +5,17 @@ LANGUAGE_INSTRUCTIONS = {
     "fr": """
 Règles obligatoires :
 - Réponds uniquement en français correct, clair et professionnel.
-- Donne directement la réponse finale, sans raisonnement, analyse ou commentaire sur la tâche.
+- Donne directement la réponse finale, sans raisonnement ni commentaire sur la tâche.
 - Retourne uniquement du texte brut, jamais du JSON, du code ou des balises.
-- Résume seulement les informations utiles à la question. Ne copie pas un long extrait.
-- Les titres, listes, procédures, conditions, pièces, délais et plafonds sont des informations
-  valides et doivent être synthétisés lorsqu'ils répondent à la question.
-- Si le contexte provient exceptionnellement d'une source arabe, rends son sens naturellement
-  en français sans traduction littérale maladroite.
-- Indique que l'information n'est pas disponible uniquement si aucun extrait ne traite du sujet.
-- Le système ajoutera automatiquement le document source et la page : ne les invente pas.
+- Utilise seulement les faits explicitement présents dans les extraits.
+- Ne mélange pas les règles provenant de documents ou de sections sans rapport.
+- Pour une question oui/non ou une liste de noms, vérifie séparément chaque élément demandé.
+- Conserve fidèlement les noms propres, numéros, dates, codes et références juridiques.
+- Si l'OCR rend un élément illisible, ne le devine pas.
+- Résume uniquement ce qui répond à la question et ne copie pas un long extrait.
+- Si la source est arabe, rends son sens en français naturel sans traduction littérale.
+- Déclare l'information indisponible seulement si aucun extrait ne permet de répondre.
+- N'invente ni le fichier ni la page : le système ajoutera la source automatiquement.
 - Rédige au maximum 110 mots.
 """.strip(),
     "ar": """
@@ -21,32 +23,16 @@ Règles obligatoires :
 - أجب بالعربية الفصحى الواضحة والسليمة وبأسلوب مهني موجز.
 - قدّم الإجابة النهائية مباشرة، من دون تحليل أو شرح للتفكير أو تعليق على المهمة.
 - أعد نصًا عاديًا فقط، ولا تُرجع JSON أو شفرة أو وسومًا.
-- لخّص المعلومات المفيدة للسؤال فقط، ولا تنسخ مقتطفًا طويلًا.
-- اعتبر العناوين والقوائم والإجراءات والشروط والوثائق المطلوبة والآجال والحدود المالية
-  معلومات صالحة يجب تلخيصها عندما تجيب عن السؤال.
-- إذا كانت المقتطفات عربية، فاعتمد مصطلحاتها العربية مباشرة ولا تترجمها عن الفرنسية.
-- إذا استُخدمت مقتطفات فرنسية احتياطيًا، فانقل معناها إلى عربية فصحى طبيعية غير حرفية،
-  ولا تُخفِ اسم المصدر الفرنسي أو تستبدله بمصدر عربي.
-- عند الاعتماد على مصدر فرنسي، استخدم مقابلات إدارية سليمة، منها:
-  dépenses éligibles = المصاريف القابلة للتعويض،
-  dépenses non éligibles = المصاريف غير القابلة للتعويض،
-  loisirs personnels = الترفيه الشخصي،
-  frais de réception = مصاريف استقبال العملاء والاجتماعات،
-  approbation préalable = الموافقة المسبقة، conserver les reçus = الاحتفاظ بالإيصالات،
-  formulaire de demande = استمارة طلب التعويض، traitement = معالجة الطلب،
-  hébergement standard = الإقامة الفندقية العادية، transport routier = النقل البري.
-  dîners officiels = مآدب العشاء الرسمية، Finance = قسم المالية،
-  dépenses > 500 DT = المصاريف التي تتجاوز 500 دينار،
-  assurance ou frais médicaux = التأمين أو المصاريف الطبية.
-  fournitures et équipement de bureau = لوازم ومعدات المكتب،
-  amendes de stationnement ou violations routières = غرامات الوقوف أو المخالفات المرورية،
-  hébergement hôtel (standard/capitale) = الإقامة الفندقية (فندق عادي/العاصمة)،
-  traitement dans 15 jours ouvrables = معالجة الطلب خلال 15 يوم عمل.
-- اكتب فقرة أو فقرتين قصيرتين، وتجنب القوائم الطويلة والصياغات الركيكة.
-- توقّف بعد عرض الحقائق المطلوبة، ولا تضف خاتمة عامة أو جملة حشو.
-- اذكر أن المعلومات غير متوفرة فقط إذا لم يتناول أي مقتطف الموضوع المطلوب.
-- لا تذكر اسم الملف أو الصفحة داخل متن الإجابة؛ سيضيف النظام سطر المصدر تلقائيًا.
-- لا تتجاوز الإجابة 110 كلمات.
+- استخدم فقط الحقائق الواردة بوضوح في المقتطفات.
+- لا تخلط بين أحكام وثائق أو أقسام لا تتعلق بالسؤال نفسه.
+- في أسئلة نعم أو لا وقوائم الأسماء، تحقّق من كل عنصر مطلوب على حدة.
+- حافظ بدقة على الأسماء والأرقام والتواريخ والرموز والمراجع القانونية.
+- إذا جعل التعرف الضوئي عنصرًا غير مقروء، فلا تخمّنه.
+- لخّص فقط ما يجيب عن السؤال، ولا تنسخ مقتطفًا طويلًا.
+- إذا كان المصدر فرنسيًا، فانقل معناه إلى عربية فصحى طبيعية غير حرفية.
+- اذكر أن المعلومة غير متوفرة فقط إذا لم يسمح أي مقتطف بالإجابة.
+- لا تخترع اسم الملف أو الصفحة؛ سيضيف النظام المصدر تلقائيًا.
+- اكتب فقرة أو فقرتين قصيرتين ولا تتجاوز 110 كلمات.
 """.strip(),
 }
 

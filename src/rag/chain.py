@@ -167,10 +167,22 @@ def _is_unavailable(answer: str) -> bool:
         "n'est pas disponible",
         "ne sont pas disponibles",
         "pas disponible dans les documents",
+        "n'est pas présente",
+        "n'est pas mentionné",
+        "n'est pas mentionnée",
+        "ne mentionne pas",
+        "ne contient aucune information",
+        "aucune information",
         "غير متوفر",
         "غير متوفرة",
+        "لا توجد معلومات",
+        "لا يحتوي",
+        "لا تحتوي",
+        "لا يتحدث",
+        "لا يحدد",
         "not available",
         "not found in the provided documents",
+        "does not contain",
     )
     return any(phrase in normalized for phrase in unavailable_phrases)
 
@@ -353,6 +365,55 @@ def _strip_trailing_source(answer: str) -> str:
     ).rstrip()
 
 
+EVIDENCE_STOPWORDS = {
+    "avec", "dans", "des", "est", "les", "pour", "que", "quel",
+    "quelle", "sont", "une", "the", "what", "which",
+    "\u0627\u0644\u062a\u064a", "\u0627\u0644\u0630\u064a", "\u0641\u064a", "\u0645\u0646", "\u0645\u0627",
+    "\u0645\u0627\u0630\u0627", "\u0647\u0644", "\u0647\u064a", "\u0647\u0648",
+}
+
+
+def _evidence_terms(text: str) -> set[str]:
+    terms = re.findall(
+        r"\d+|[a-z\u00c0-\u00ff]{2,}|[\u0621-\u064a]{2,}",
+        text.casefold(),
+    )
+    return {term for term in terms if term not in EVIDENCE_STOPWORDS}
+
+
+def _select_evidence_chunk(
+    answer: str,
+    question: str,
+    retrieved_chunks: list[dict],
+) -> dict:
+    context_reference = re.search(
+        r"(?:document|extrait|الوثيقة|المقتطف)\s*(?:n[°o]?\s*)?(\d+)",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    if context_reference:
+        index = int(context_reference.group(1)) - 1
+        if 0 <= index < len(retrieved_chunks):
+            return retrieved_chunks[index]
+
+    evidence_terms = _evidence_terms(f"{question} {answer}")
+    entity_terms = set(
+        re.findall(
+            r"\d+|[a-z\u00c0-\u00ff]{2,}",
+            question.casefold(),
+        )
+    ) - EVIDENCE_STOPWORDS
+
+    def score(chunk: dict) -> float:
+        content_terms = _evidence_terms(str(chunk.get("content") or ""))
+        overlap = len(evidence_terms & content_terms)
+        entity_overlap = len(entity_terms & content_terms)
+        distance = float(chunk.get("distance", 1.0))
+        return entity_overlap * 0.12 + overlap * 0.01 - distance
+
+    return max(retrieved_chunks, key=score)
+
+
 def _add_source_if_missing(
     answer: str,
     question: str,
@@ -364,7 +425,12 @@ def _add_source_if_missing(
         return answer
 
     answer = _strip_trailing_source(answer)
-    metadata = retrieved_chunks[0].get("metadata") or {}
+    evidence_chunk = _select_evidence_chunk(
+        answer,
+        question,
+        retrieved_chunks,
+    )
+    metadata = evidence_chunk.get("metadata") or {}
     source = _source_name(metadata.get("source"))
     page = metadata.get("page")
     if source == "Unknown source" or page is None:
