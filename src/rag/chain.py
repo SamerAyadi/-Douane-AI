@@ -119,26 +119,10 @@ def _answer_language_matches(question: str, answer: str) -> bool:
     if language == "ar":
         return is_readable_text(answer, "ar")
 
-    words = set(re.findall(r"[A-Za-zÀ-ÿ']+", answer.casefold()))
     if language == "fr":
-        french_signals = {
-            "avec",
-            "congé",
-            "congés",
-            "dans",
-            "de",
-            "des",
-            "est",
-            "fériés",
-            "jours",
-            "la",
-            "le",
-            "les",
-            "prévoit",
-            "selon",
-            "une",
-        }
-        return bool(words & french_signals)
+        arabic_characters = len(re.findall(r"[\u0600-\u06ff]", answer))
+        latin_characters = len(re.findall(r"[A-Za-zÀ-ÿ]", answer))
+        return latin_characters >= 5 and latin_characters > arabic_characters
 
     english_signals = {
         "according",
@@ -176,6 +160,7 @@ def _is_unavailable(answer: str) -> bool:
         "غير متوفر",
         "غير متوفرة",
         "لا توجد معلومات",
+        "لا توجد ذكر",
         "لا يحتوي",
         "لا تحتوي",
         "لا يتحدث",
@@ -395,6 +380,16 @@ def _select_evidence_chunk(
         index = int(context_reference.group(1)) - 1
         if 0 <= index < len(retrieved_chunks):
             return retrieved_chunks[index]
+
+    chunk_languages = {
+        (chunk.get("metadata") or {}).get("language")
+        for chunk in retrieved_chunks
+    }
+    if detect_question_language(question) == "fr" and len(chunk_languages) > 1:
+        return min(
+            retrieved_chunks,
+            key=lambda chunk: float(chunk.get("distance", 1.0)),
+        )
 
     evidence_terms = _evidence_terms(f"{question} {answer}")
     entity_terms = set(

@@ -285,13 +285,14 @@ class DocumentRetriever:
         ).tolist()
         document_prefix = _document_number_prefix(question)
         if document_prefix:
+            document_candidate_count = min(max(top_k * 4, 8), total_documents)
             document_chunks = self._document_chunks(
                 query_embedding=query_embedding,
                 document_prefix=document_prefix,
-                top_k=top_k,
+                top_k=document_candidate_count,
             )
             if document_chunks:
-                return document_chunks
+                return _select_context_chunks(document_chunks, top_k)
 
         preferred_chunks = self._safe_filtered_query(
             query_embedding=query_embedding,

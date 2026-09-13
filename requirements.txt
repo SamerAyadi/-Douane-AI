@@ -3,6 +3,7 @@ chromadb
 PyMuPDF
 pytesseract
 Pillow
+pdfplumber
 python-dotenv
 requests
 sentence-transformers

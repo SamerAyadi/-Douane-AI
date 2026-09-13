@@ -1,387 +1,267 @@
 [
   {
-    "id": "Q01",
+    "id": "N01",
     "language": "ar",
-    "question": "ما هي الملاحظات التفسيرية للفصول المتعلقة بالقيمة لدى الديوانة؟",
-    "expected_document": "019_2026",
-    "expected_pages": [
-      5,
-      20
-    ],
-    "expected_facts": [
-      "الفصول من 22 إلى 35",
-      "القيمة لدى الديوانة",
-      "ترتيب تتابعي لتحديد القيمة"
-    ],
-    "answer_available": true,
+    "question": "ما هو موضوع النص عدد 026 لسنة 2026؟",
     "type": "answerable",
-    "category": "multi_section",
-    "minimum_fact_matches": 2
+    "category": "document_number",
+    "answer_available": true,
+    "expected_document": "026_2026",
+    "expected_pages": [1],
+    "expected_facts": [
+      "تسوية العربات",
+      "الامتيازات الجبائية",
+      "التونسيين المقيمين بالخارج",
+      "إنجاز مشاريع قبل انقضاء أجل عدم التفويت"
+    ]
   },
   {
-    "id": "Q02",
+    "id": "N02",
     "language": "ar",
-    "question": "ما هو موضوع النص عدد 020 لسنة 2026؟",
-    "expected_document": "020_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "منح الترخيص بسياقة المعدات السيارة والشاحنة",
-      "الموردة في إطار إنجاز مشروع"
-    ],
-    "answer_available": true,
+    "question": "هل يجب على المصالح الديوانية المطالبة برخصة توريد عند تسوية المعدات أو الشاحنة قبل انتهاء فترة التحجير؟",
     "type": "answerable",
-    "category": "document_number"
+    "category": "yes_no",
+    "answer_available": true,
+    "expected_document": "026_2026",
+    "expected_pages": [1],
+    "expected_facts": [
+      "عدم المطالبة برخصة توريد",
+      "تسوية المعدات والتجهيزات والشاحنة",
+      "احترام بقية الإجراءات الجاري بها العمل"
+    ],
+    "expected_answer_type": "yes_no",
+    "expected_decision": "no"
   },
   {
-    "id": "Q03",
-    "language": "ar",
-    "question": "هل تخضع المعدات الخاصة والجرارات الفلاحية لهذا الإجراء؟",
-    "expected_document": "020_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "المعدات الخاصة",
-      "الجرارات الفلاحية",
-      "العربات المجرورة",
-      "آلات الحصاد"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "semantic"
-  },
-  {
-    "id": "Q04",
-    "language": "ar",
-    "question": "ما هو موضوع قرار وزير الصحة المؤرخ في 14 ماي 2026؟",
-    "expected_document": "021_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "ضبط قائمة بدائل لبن الأم"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "direct"
-  },
-  {
-    "id": "Q05",
-    "language": "ar",
-    "question": "هل منتج Aptamil AR 1 موجود في قائمة بدائل لبن الأم؟",
-    "expected_document": "021_2026",
-    "expected_pages": [
-      2
-    ],
-    "expected_facts": [
-      "نعم",
-      "Aptamil AR 1"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "mixed_language_product"
-  },
-  {
-    "id": "Q06",
-    "language": "ar",
-    "question": "هل منتج Gallia AR II موجود في القائمة؟",
-    "expected_document": "021_2026",
-    "expected_pages": [
-      3
-    ],
-    "expected_facts": [
-      "نعم",
-      "Gallia AR II"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "mixed_language_product"
-  },
-  {
-    "id": "Q07",
-    "language": "ar",
-    "question": "ما هي الدول التي انضمت إلى مبادرة التجارة الموجهة في النص عدد 022؟",
-    "expected_document": "022_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "جنوب إفريقيا",
-      "المغرب",
-      "نيجيريا"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "direct"
-  },
-  {
-    "id": "Q08",
-    "language": "ar",
-    "question": "ما هي نسب التفكيك التدريجي للرسوم المذكورة في النص عدد 022؟",
-    "expected_document": "022_2026",
-    "expected_pages": [
-      2,
-      3
-    ],
-    "expected_facts": [
-      "40%",
-      "30%",
-      "20%",
-      "10%",
-      "إلغاء الرسوم المتبقية"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "multi_section"
-  },
-  {
-    "id": "Q09",
-    "language": "ar",
-    "question": "ما هو رمز وثيقة الامتياز الجبائي المذكور في النص عدد 022؟",
-    "expected_document": "022_2026",
-    "expected_pages": [
-      3
-    ],
-    "expected_facts": [
-      "404"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "direct"
-  },
-  {
-    "id": "Q10",
-    "language": "ar",
-    "question": "من هو الشخص الذي تمت تسميته في النص عدد 023؟",
-    "expected_document": "023_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "شاكر الوسلاتي"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "document_number"
-  },
-  {
-    "id": "Q11",
+    "id": "N03",
     "language": "ar",
     "question": "ما هو موضوع النص عدد 024 لسنة 2026؟",
+    "type": "answerable",
+    "category": "document_number",
+    "answer_available": true,
     "expected_document": "024_2026",
-    "expected_pages": [
-      1
-    ],
+    "expected_pages": [1],
     "expected_facts": [
       "إتمام القرار المؤرخ في 21 أوت 2023",
       "قائمة المنتجات المختصة بها الدولة",
       "أسعارها"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "document_number"
+    ]
   },
   {
-    "id": "Q12",
+    "id": "N04",
     "language": "ar",
-    "question": "ما هي بعض المنتجات الموجودة في جدول الملحق للنص عدد 024؟",
+    "question": "اذكر مثالين من منتجات السجائر الموجودة في ملحق النص عدد 024 مع عدد القائمة أو السعر.",
+    "type": "answerable",
+    "category": "table",
+    "answer_available": true,
     "expected_document": "024_2026",
-    "expected_pages": [
-      2
-    ],
+    "expected_pages": [2],
     "expected_facts": [
       "قوافل أحمر",
       "قوافل ذهبي",
-      "مالبورو",
-      "تربليا"
-    ],
-    "minimum_fact_matches": 3,
-    "answer_available": true,
-    "type": "answerable",
-    "category": "direct"
-  },
-  {
-    "id": "Q13",
-    "language": "fr",
-    "question": "Quel est le sujet principal du texte 019 de 2026 ?",
-    "expected_document": "019_2026",
-    "expected_pages": [
-      1,
-      5
-    ],
-    "expected_facts": [
-      "notes explicatives",
-      "valeur en douane"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "document_number"
-  },
-  {
-    "id": "Q14",
-    "language": "fr",
-    "question": "Le texte 020 concerne-t-il les autorisations de conduite ?",
-    "expected_document": "020_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "oui",
-      "autorisations de conduite",
-      "véhicules",
-      "camions",
-      "importés",
-      "projets"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "semantic",
-    "minimum_fact_matches": 4
-  },
-  {
-    "id": "Q15",
-    "language": "fr",
-    "question": "Donne trois exemples de produits figurant dans la liste des substituts du lait maternel.",
-    "expected_document": "021_2026",
-    "expected_pages": [
-      2,
-      3,
-      4,
-      5,
-      6,
-      7
-    ],
-    "expected_facts": [
-      "Aptamil",
-      "Gallia",
-      "Nan",
-      "Novalac",
-      "Celia",
-      "Guigoz",
-      "Nursie",
-      "Similac",
-      "Newlac"
-    ],
-    "minimum_fact_matches": 3,
-    "answer_available": true,
-    "type": "answerable",
-    "category": "multi_section"
-  },
-  {
-    "id": "Q16",
-    "language": "ar",
-    "question": "هل تحتوي الوثائق على معلومات حول تعويض المصاريف المهنية؟",
-    "expected_document": null,
-    "expected_pages": [],
-    "expected_facts": [],
-    "answer_available": false,
-    "type": "absent",
-    "category": "absent"
-  },
-  {
-    "id": "Q17",
-    "language": "ar",
-    "question": "هل يتحدث النص عدد 019 عن أسعار السجائر؟",
-    "expected_document": null,
-    "expected_pages": [],
-    "expected_facts": [],
-    "answer_available": false,
-    "type": "absent",
-    "category": "absent"
-  },
-  {
-    "id": "Q18",
-    "language": "ar",
-    "question": "هل يحدد القرار عدد 021 أسعار بدائل لبن الأم؟",
-    "expected_document": null,
-    "expected_pages": [],
-    "expected_facts": [],
-    "answer_available": false,
-    "type": "absent",
-    "category": "absent"
-  },
-  {
-    "id": "H01",
-    "language": "ar",
-    "question": "إذا لم يتم تحديد القيمة لدى الديوانة حسب الطريقة الأولى، كيف يتم المرور إلى بقية الطرق؟",
-    "type": "answerable",
-    "category": "semantic_paraphrase",
-    "answer_available": true,
-    "expected_document": "019_2026",
-    "expected_pages": [
-      4,
-      5
-    ],
-    "expected_facts": [
-      "تطبيق الطرق بالتتابع",
-      "الفصل 23",
-      "الفصول الموالية"
-    ],
-    "minimum_fact_matches": 2
-  },
-  {
-    "id": "H02",
-    "language": "ar",
-    "question": "ما علاقة التونسيين المقيمين بالخارج بسياقة المعدات السيارة والشاحنة الموردة في إطار مشروع؟",
-    "type": "answerable",
-    "category": "semantic_without_document_number",
-    "answer_available": true,
-    "expected_document": "020_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "التونسيين المقيمين بالخارج",
-      "امتيازات جبائية",
-      "إنجاز مشروع",
-      "المعدات السيارة والشاحنة"
+      "مالبورو أدمانس",
+      "0182",
+      "0183",
+      "0360"
     ]
   },
   {
-    "id": "H03",
+    "id": "N05",
     "language": "ar",
-    "question": "هل توجد في قائمة بدائل لبن الأم منتجات تحمل أسماء Nan أو Novalac؟",
+    "question": "ما الفرق بين الوزن القائم والوزن الصافي والطرح حسب قرار 28 جانفي 2009؟",
     "type": "answerable",
-    "category": "mixed_language_product",
+    "category": "definition",
     "answer_available": true,
-    "expected_document": "021_2026",
-    "expected_pages": [
-      2,
-      3,
-      4,
-      5,
-      6,
-      7
-    ],
+    "expected_document": "TA_2008_AR_1",
+    "expected_pages": [1],
     "expected_facts": [
-      "نعم",
-      "Nan",
-      "Novalac"
+      "الوزن القائم",
+      "الوزن الجملي للبضاعة",
+      "الوزن الصافي",
+      "وزن البضاعة مجردة من الأغلفة والأوعية",
+      "الطرح",
+      "وزن الأغلفة والأوعية"
     ]
   },
   {
-    "id": "H04",
+    "id": "N06",
     "language": "ar",
-    "question": "ما هي الدول الإفريقية المذكورة في مبادرة التجارة الموجهة ضمن منطقة التبادل الحر القارية الإفريقية؟",
+    "question": "ما هي أشكال الإجراءات المبسطة المنصوص عليها بالفصل 118 من مجلة الديوانة؟",
     "type": "answerable",
-    "category": "semantic_paraphrase",
+    "category": "list",
     "answer_available": true,
-    "expected_document": "022_2026",
-    "expected_pages": [
-      1
-    ],
+    "expected_document": "TA_2008_AR_5",
+    "expected_pages": [1],
     "expected_facts": [
-      "جنوب إفريقيا",
-      "المغرب",
-      "نيجيريا"
+      "تصاريح أولية تقديرية",
+      "تصاريح مبسطة",
+      "تصاريح إجمالية"
     ]
   },
   {
-    "id": "H05",
+    "id": "N07",
     "language": "ar",
-    "question": "هل تحتوي الوثائق الحالية على معلومات حول عطلة سنوية لأعوان الديوانة؟",
+    "question": "في أي أجل يجب تقديم التصريح المفصل للتسوية بعد إيداع التصريح المبسط؟",
+    "type": "answerable",
+    "category": "deadline",
+    "answer_available": true,
+    "expected_document": "TA_2008_AR_5",
+    "expected_pages": [2],
+    "expected_facts": [
+      "ثمانية أيام",
+      "من تاريخ إيداع التصريح المبسط",
+      "تصريح مفصل للتسوية"
+    ]
+  },
+  {
+    "id": "N08",
+    "language": "ar",
+    "question": "هل يمكن تفريغ البضائع دون ترخيص كتابي من مصالح الديوانة؟",
+    "type": "answerable",
+    "category": "yes_no",
+    "answer_available": true,
+    "expected_document": "TA_2008_AR_6",
+    "expected_pages": [1],
+    "expected_facts": [
+      "لا يمكن تفريغ أي بضاعة دون ترخيص كتابي",
+      "مصالح الديوانة"
+    ],
+    "expected_answer_type": "yes_no",
+    "expected_decision": "no"
+  },
+  {
+    "id": "N09",
+    "language": "ar",
+    "question": "ما هي بعض البيانات التي يجب أن يتضمنها مطلب إعادة الشحن؟",
+    "type": "answerable",
+    "category": "list",
+    "answer_available": true,
+    "expected_document": "TA_2008_AR_6",
+    "expected_pages": [3],
+    "expected_facts": [
+      "هوية الطالب وعنوانه",
+      "التسمية التجارية للبضاعة",
+      "وزن البضاعة وقيمتها",
+      "بلد منشأ البضاعة",
+      "مكان إجراء عملية إعادة الشحن"
+    ]
+  },
+  {
+    "id": "N10",
+    "language": "ar",
+    "question": "ما هي سندات الالتزام الإدارية ولمن تسلم؟",
+    "type": "answerable",
+    "category": "definition",
+    "answer_available": true,
+    "expected_document": "TA_2008_AR_9",
+    "expected_pages": [1],
+    "expected_facts": [
+      "سندات الالتزام الإدارية",
+      "دفع المعاليم والأداءات الديوانية",
+      "مصالح الدولة",
+      "تسلم من قبل مصالح الديوانة"
+    ]
+  },
+  {
+    "id": "N11",
+    "language": "fr",
+    "question": "Quels sont les critères permettant de qualifier une transformation comme substantielle selon le décret 2009-401 ?",
+    "type": "answerable",
+    "category": "french_semantic",
+    "answer_available": true,
+    "expected_document": "401_2009",
+    "expected_pages": [4],
+    "expected_facts": [
+      "position tarifaire à quatre chiffres",
+      "valeur ajoutée locale",
+      "ouvraisons ou transformations",
+      "40%"
+    ]
+  },
+  {
+    "id": "N12",
+    "language": "fr",
+    "question": "Les opérations simples de conditionnement ou d’étiquetage suffisent-elles pour conférer l’origine d’un pays ?",
+    "type": "answerable",
+    "category": "french_yes_no",
+    "answer_available": true,
+    "expected_document": "401_2009",
+    "expected_pages": [5],
+    "expected_facts": [
+      "insuffisantes",
+      "simple conditionnement",
+      "étiquettes",
+      "signes distinctifs"
+    ],
+    "expected_answer_type": "yes_no",
+    "expected_decision": "no"
+  },
+  {
+    "id": "N13",
+    "language": "fr",
+    "question": "Quelle est la durée maximale du régime d’admission temporaire pour les palettes et les conteneurs ?",
+    "type": "answerable",
+    "category": "french_deadline",
+    "answer_available": true,
+    "expected_document": "711_2009",
+    "expected_pages": [1, 2],
+    "expected_facts": [
+      "six mois",
+      "douze mois",
+      "proroger"
+    ]
+  },
+  {
+    "id": "N14",
+    "language": "fr",
+    "question": "L’admission temporaire est-elle accordée aux marchandises consomptibles ou destructibles pendant leur usage ?",
+    "type": "answerable",
+    "category": "french_yes_no",
+    "answer_available": true,
+    "expected_document": "711_2009",
+    "expected_pages": [8],
+    "expected_facts": [
+      "n’est pas accordée",
+      "consomptibles",
+      "destructibles"
+    ],
+    "expected_answer_type": "yes_no",
+    "expected_decision": "no"
+  },
+  {
+    "id": "N15",
+    "language": "fr",
+    "question": "Quelle est la durée de validité du certificat d’origine ?",
+    "type": "answerable",
+    "category": "french_deadline",
+    "answer_available": true,
+    "expected_document": "2009_02_25_Arrete_preuves_d_origine",
+    "expected_pages": [2],
+    "expected_facts": [
+      "six mois",
+      "date d’émission",
+      "présenté aux services des douanes"
+    ]
+  },
+  {
+    "id": "N16",
+    "language": "fr",
+    "question": "Combien d’échantillons sont prélevés en cas de recours à la commission de conciliation et d’expertise douanière ?",
+    "type": "answerable",
+    "category": "french_procedure",
+    "answer_available": true,
+    "expected_document": "2009_03_10_Arrete_prelevement_des_echant",
+    "expected_pages": [1],
+    "expected_facts": [
+      "trois échantillons",
+      "en présence du déclarant",
+      "marchandise faisant l’objet de la contestation"
+    ]
+  },
+  {
+    "id": "N17",
+    "language": "ar",
+    "question": "هل تحتوي الوثائق الحالية على معلومات حول منحة العودة المدرسية لأعوان الديوانة؟",
     "type": "absent",
     "category": "absent_answer",
     "answer_available": false,
@@ -390,285 +270,14 @@
     "expected_facts": []
   },
   {
-    "id": "H06",
-    "language": "ar",
-    "question": "هل يوجد منتج Nan AR ضمن قائمة بدائل لبن الأم؟",
-    "type": "answerable",
-    "category": "mixed_language_product_yes_no",
-    "answer_available": true,
-    "expected_document": "021_2026",
-    "expected_pages": [
-      4
-    ],
-    "expected_facts": [
-      "نعم",
-      "Nan AR"
-    ]
-  },
-  {
-    "id": "Q19",
-    "language": "ar",
-    "question": "ما هو موضوع النص عدد 025 لسنة 2026؟",
-    "expected_document": "025_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "الأكياس المنسوجة من البوليبروبيلان",
-      "المراقبة الفنية الآلية عند التوريد"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "document_number"
-  },
-  {
-    "id": "Q20",
-    "language": "ar",
-    "question": "ما هي الوثيقة المطلوبة لتوريد الأكياس المنسوجة من البوليبروبيلان، وما رمزها والجهة التي تسلمها؟",
-    "expected_document": "025_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "المراقبة الفنية الآلية",
-      "685",
-      "الهيئة الوطنية للسلامة الصحية للمنتجات الغذائية"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "semantic"
-  },
-  {
-    "id": "Q21",
-    "language": "ar",
-    "question": "ما هو موضوع النص عدد 026 لسنة 2026؟",
-    "expected_document": "026_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "تسوية العربات",
-      "الامتيازات الجبائية",
-      "التونسيين المقيمين بالخارج",
-      "قبل انقضاء أجل عدم التفويت"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "document_number"
-  },
-  {
-    "id": "Q22",
-    "language": "ar",
-    "question": "هل يجب على المصالح الديوانية المطالبة برخصة توريد عند تسوية المعدات أو الشاحنة قبل انتهاء فترة التحجير؟",
-    "expected_document": "026_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "عدم",
-      "رخصة توريد",
-      "خمس سنوات",
-      "بقية الإجراءات"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "semantic",
-    "minimum_fact_matches": 3
-  },
-  {
-    "id": "Q23",
-    "language": "ar",
-    "question": "ما هو موضوع النص عدد 027 لسنة 2026؟",
-    "expected_document": "027_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "اتفاقية التعاون والمساعدة المتبادلة",
-      "المسائل الجمركية",
-      "الجمهورية التونسية",
-      "المملكة العربية السعودية"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "document_number"
-  },
-  {
-    "id": "Q24",
-    "language": "ar",
-    "question": "أين ومتى تم توقيع اتفاقية التعاون الجمركي بين تونس والمملكة العربية السعودية؟",
-    "expected_document": "027_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "رياض",
-      "28 ديسمبر 2025"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "direct"
-  },
-  {
-    "id": "Q25",
-    "language": "ar",
-    "question": "ما هو موضوع النص عدد 028 لسنة 2026 وما هو مرجعه القانوني؟",
-    "expected_document": "028_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "انتخاب هيئة الوسطاء المقبولين لدى الديوانة",
-      "الفصل 105 من مجلة الديوانة"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "document_number"
-  },
-  {
-    "id": "Q26",
-    "language": "ar",
-    "question": "كيف يوجه الوسطاء المقبولون لدى الديوانة اعتراضاتهم الانتخابية؟",
-    "expected_document": "028_2026",
-    "expected_pages": [
-      2
-    ],
-    "expected_facts": [
-      "رسالة مضمونة الوصول",
-      "الإدارة العامة للديوانة",
-      "شارع الهادي كراي"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "procedure"
-  },
-  {
-    "id": "Q27",
-    "language": "ar",
-    "question": "ما هي طرق توجيه ظرف انتخاب هيئة الوسطاء المقبولين لدى الديوانة؟",
-    "expected_document": "028_2026",
-    "expected_pages": [
-      2
-    ],
-    "expected_facts": [
-      "رسالة مضمونة الوصول",
-      "الإيداع المباشر",
-      "مكتب الضبط المركزي"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "procedure",
-    "minimum_fact_matches": 2
-  },
-  {
-    "id": "Q28",
+    "id": "N18",
     "language": "fr",
-    "question": "Quel document faut-il présenter pour importer des sacs tissés en polypropylène, et quel est son code ?",
-    "expected_document": "025_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "contrôle",
-      "technique",
-      "automatique",
-      "685",
-      "INSSPA"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "cross_language",
-    "minimum_fact_matches": 4
-  },
-  {
-    "id": "Q29",
-    "language": "ar",
-    "question": "ما هي قيمة منحة العودة المدرسية لأعوان الديوانة؟",
+    "question": "Les documents indiquent-ils le salaire mensuel des agents de la Douane tunisienne ?",
+    "type": "absent",
+    "category": "absent_answer",
+    "answer_available": false,
     "expected_document": null,
     "expected_pages": [],
-    "expected_facts": [],
-    "answer_available": false,
-    "type": "absent",
-    "category": "absent"
-  },
-  {
-    "id": "Q30",
-    "language": "fr",
-    "question": "Quelle est la durée du congé annuel des agents de la Douane ?",
-    "expected_document": null,
-    "expected_pages": [],
-    "expected_facts": [],
-    "answer_available": false,
-    "type": "absent",
-    "category": "absent"
-  },
-  {
-    "id": "F01",
-    "language": "fr",
-    "question": "Quels pays africains ont rejoint l'initiative du commerce guidé dans la ZLECAf ?",
-    "expected_document": "022_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "Afrique du Sud",
-      "Maroc",
-      "Nigeria"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "cross_language_semantic"
-  },
-  {
-    "id": "F02",
-    "language": "fr",
-    "question": "Une licence d'importation est-elle exigée pour régulariser un camion avant la fin de la période d'interdiction ?",
-    "expected_document": "026_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "non",
-      "licence d'importation",
-      "cinq ans",
-      "autres procédures"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "cross_language_legal",
-    "minimum_fact_matches": 3
-  },
-  {
-    "id": "F03",
-    "language": "fr",
-    "question": "Où et quand l'accord de coopération douanière entre la Tunisie et l'Arabie saoudite a-t-il été signé ?",
-    "expected_document": "027_2026",
-    "expected_pages": [
-      1
-    ],
-    "expected_facts": [
-      "Riyad",
-      "28 décembre 2025"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "cross_language_direct"
-  },
-  {
-    "id": "F04",
-    "language": "fr",
-    "question": "Comment les commissionnaires en douane doivent-ils envoyer leurs objections électorales ?",
-    "expected_document": "028_2026",
-    "expected_pages": [
-      2
-    ],
-    "expected_facts": [
-      "lettre recommandée",
-      "Direction générale des douanes",
-      "avenue Hédi Karray"
-    ],
-    "answer_available": true,
-    "type": "answerable",
-    "category": "cross_language_procedure"
+    "expected_facts": []
   }
 ]

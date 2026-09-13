@@ -30,7 +30,7 @@ Scraping is deliberately independent from ingestion and generation. `ingest.py` 
 The application follows four simple steps:
 
 1. **Scraping:** download official PDFs and save their metadata.
-2. **Ingestion:** extract normal PDF text, use OCR for scanned pages, split the text into chunks, and store their embeddings in ChromaDB.
+2. **Ingestion:** compare normal PDF extraction, use multi-layout OCR when quality is weak, keep the best page text, split it into chunks, and store the embeddings in ChromaDB.
 3. **Retrieval:** embed the user's question and retrieve the most relevant readable chunks, preferring the same language.
 4. **Generation:** send only the retrieved context to local Qwen3 through Ollama, then return a short Arabic or French answer with the real source and page.
 
@@ -105,7 +105,15 @@ Use `--limit N` for a small download test.
 python -m src.rag.ingest
 ```
 
-Ingestion first uses PyMuPDF text extraction. When a page has no text and OCR is enabled, it renders that page at 300 DPI and runs Tesseract with `ara+fra`. It then reports language and extraction readability before recreating the configured ChromaDB collection.
+Ingestion evaluates every page independently:
+
+1. Try PyMuPDF extraction.
+2. If its quality is weak, try pdfplumber.
+3. If native extraction is still weak, render the page at 300 DPI and run Tesseract PSM 3 with `ara+fra`.
+4. For low-quality or table-like OCR, also try PSM 6 and PSM 11.
+5. Keep the candidate with the best quality score, clean only obvious whitespace/junk, and preserve the extraction method, quality score, source, and page in Chroma metadata.
+
+After changing extraction logic or adding PDFs, run ingestion again so ChromaDB is rebuilt from the new text.
 
 ### 3. Test retrieval
 
@@ -129,6 +137,8 @@ Real downloads, extracted data, scraper metadata, environment files, and ChromaD
 
 - The current Douane bulletin page exposes its PDF links in server-rendered HTML, so `requests` and BeautifulSoup are sufficient. If another page loads its table only after JavaScript runs, this scraper will report that no PDF links were found; a Playwright-based page fetcher can be added later without changing the RAG modules.
 - OCR is slower than normal extraction and its accuracy depends on scan resolution, page rotation, fonts, and image quality.
-- The fallback runs only when a page has no extracted text. A page containing non-empty but corrupted text is not automatically OCRed.
+- Alternative OCR modes are conditional, so table-like pages take longer to ingest than ordinary pages.
+- The quality score detects broad corruption but cannot guarantee that every isolated OCR error, such as `II` being read as `IT`, is corrected.
+- If every extraction candidate is poor, the page is stored as unreadable metadata and excluded by normal retrieval.
 - Tesseract is an external program. Installing `pytesseract` does not install the engine or the `ara` and `fra` language files.
 - Scraper language routing uses explicit source filename markers first, title text second, and the page language as a final fallback. The generated filename does not invent a language marker. Ingestion independently checks readable PDF text before using the `ar/fr` folder as a fallback.
