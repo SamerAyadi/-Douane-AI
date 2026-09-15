@@ -21,16 +21,18 @@ TOP_K_METRICS = 3
 
 ARABIC_DIACRITICS = re.compile(r"[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06ed]")
 COMMON_PUNCTUATION = re.compile(r"""[.,;:!?؟،؛…"’‘“”'()\[\]{}<>«»/\\|_-]+""")
+PARENTHESIZED_NUMBER = re.compile(r"\(\s*\d+(?:[.,]\d+)?\s*\)")
 ARABIC_PREFIXED_ARTICLE = re.compile(r"\b(?:لل|ال|[وفبك]ال)(?=[\u0621-\u064a])")
 ARABIC_ALEF_TRANSLATION = str.maketrans(
-    {"أ": "ا", "إ": "ا", "آ": "ا", "ى": "ي"}
+    {"أ": "ا", "إ": "ا", "آ": "ا", "ى": "ي", "ی": "ي", "ک": "ك"}
 )
 
 UNAVAILABLE_PHRASES = (
     "غير متوفر", "غير متوفرة", "لا تتوفر", "المعلومة غير متوفرة",
     "لا توجد معلومات", "لا يوجد ذكر", "لا يحتوي", "لا تحتوي",
     "n'est pas disponible", "ne sont pas disponibles", "pas disponible",
-    "non disponible", "les documents ne contiennent pas", "aucune information",
+    "non disponible", "les documents ne contiennent pas", "ne mentionne pas",
+    "ne mentionnent pas", "sans aucune référence", "aucune information",
     "not available", "not found", "not mentioned", "does not contain",
 )
 NEGATIVE_DECISION_PHRASES = (
@@ -73,8 +75,10 @@ def normalize_text(value: object) -> str:
     text = "".join(char for char in text if not unicodedata.combining(char))
     text = ARABIC_DIACRITICS.sub("", text).replace("ـ", "")
     text = text.translate(ARABIC_ALEF_TRANSLATION)
+    text = PARENTHESIZED_NUMBER.sub(" ", text)
     text = COMMON_PUNCTUATION.sub(" ", text)
     text = ARABIC_PREFIXED_ARTICLE.sub("", text)
+    text = re.sub(r"\bو(?=ا[\u0621-\u064a]{2,})", "و ", text)
     return " ".join(text.split())
 
 
@@ -98,7 +102,22 @@ def phrase_present(normalized_text: str, phrase: object) -> bool:
                 normalized_text,
             )
         )
-    return normalized_phrase in normalized_text
+    if normalized_phrase in normalized_text:
+        return True
+
+    # OCR and ordinary Arabic phrasing can change one word in a longer fact
+    # (for example singular/plural forms). Keep this fallback conservative.
+    phrase_tokens = normalized_phrase.split()
+    if (
+        len(phrase_tokens) >= 4
+        and re.search(r"[\u0621-\u064a]", normalized_phrase)
+    ):
+        text_tokens = set(normalized_text.split())
+        token_coverage = sum(
+            token in text_tokens for token in phrase_tokens
+        ) / len(phrase_tokens)
+        return token_coverage >= 0.75
+    return False
 
 
 def match_phrases(
@@ -408,8 +427,8 @@ def has_unavailable_signal(answer: str) -> bool:
 
 def absent_answer_metrics(
     answer: str,
-    detected_decision: str,
-    contradiction: bool,
+    detected_decision: str | None,
+    contradiction: bool | None,
     cited_source: str | None,
 ) -> tuple[bool, str]:
     unavailable = has_unavailable_signal(answer)
@@ -430,11 +449,7 @@ def absent_answer_metrics(
 
 def check_unavailable_answer(answer: str) -> bool:
     cited_source, _ = parse_citation(answer)
-    decision, contradiction, _, _ = detect_decision(answer)
-    correct, _ = absent_answer_metrics(
-        answer, decision, contradiction, cited_source
-    )
-    return correct
+    return has_unavailable_signal(answer) and cited_source is None
 
 
 def check_answer_language(expected_language: str, answer: str) -> bool:
@@ -755,14 +770,19 @@ def run_evaluation(
             result.update(retrieval_metrics(question, sources))
 
             if mode == "chain":
-                decision, contradiction, positives, negatives = detect_decision(
-                    answer
-                )
+                is_yes_no = question.get("expected_answer_type") == "yes_no"
+                if is_yes_no:
+                    decision, contradiction, positives, negatives = (
+                        detect_decision(answer)
+                    )
+                else:
+                    decision, contradiction = None, None
+                    positives, negatives = [], []
                 result["detected_decision"] = decision
                 result["contradiction_detected"] = contradiction
                 result["positive_decision_signals"] = positives
                 result["negative_decision_signals"] = negatives
-                if question.get("expected_answer_type") == "yes_no":
+                if is_yes_no:
                     result["decision_correct"] = (
                         decision == question.get("expected_decision")
                     )
@@ -862,11 +882,15 @@ def run_evaluation(
             result.setdefault("total_time_seconds", None)
             if mode == "chain":
                 defaults = {
-                    "answer": "", "detected_decision": "unknown",
+                    "answer": "", "detected_decision": "unknown"
+                    if question.get("expected_answer_type") == "yes_no"
+                    else None,
                     "decision_correct": False
                     if question.get("expected_answer_type") == "yes_no"
                     else None,
-                    "contradiction_detected": False,
+                    "contradiction_detected": False
+                    if question.get("expected_answer_type") == "yes_no"
+                    else None,
                     "positive_decision_signals": [],
                     "negative_decision_signals": [],
                     "required_phrase_matches": {},

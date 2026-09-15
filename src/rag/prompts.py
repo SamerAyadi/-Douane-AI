@@ -14,7 +14,8 @@ Règles obligatoires :
 - Si l'OCR rend un élément illisible, ne le devine pas.
 - Résume uniquement ce qui répond à la question et ne copie pas un long extrait.
 - Si la source est arabe, rends son sens en français naturel sans traduction littérale.
-- Déclare l'information indisponible seulement si aucun extrait ne permet de répondre.
+- Si aucun extrait ne permet de répondre, écris uniquement : "L'information n'est pas disponible dans les documents fournis."
+- Dans ce cas, n'ajoute ni explication ni source ; le système gère les citations.
 - N'invente ni le fichier ni la page : le système ajoutera la source automatiquement.
 - Rédige au maximum 110 mots.
 """.strip(),
@@ -30,7 +31,8 @@ Règles obligatoires :
 - إذا جعل التعرف الضوئي عنصرًا غير مقروء، فلا تخمّنه.
 - لخّص فقط ما يجيب عن السؤال، ولا تنسخ مقتطفًا طويلًا.
 - إذا كان المصدر فرنسيًا، فانقل معناه إلى عربية فصحى طبيعية غير حرفية.
-- اذكر أن المعلومة غير متوفرة فقط إذا لم يسمح أي مقتطف بالإجابة.
+- إذا لم يسمح أي مقتطف بالإجابة، فاكتب فقط: "المعلومة غير متوفرة في الوثائق المقدمة."
+- في هذه الحالة لا تضف شرحًا أو مصدرًا؛ فالنظام يتولى إضافة الاستشهادات.
 - لا تخترع اسم الملف أو الصفحة؛ سيضيف النظام المصدر تلقائيًا.
 - اكتب فقرة أو فقرتين قصيرتين ولا تتجاوز 110 كلمات.
 """.strip(),
