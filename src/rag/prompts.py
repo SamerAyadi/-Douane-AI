@@ -61,6 +61,25 @@ REPAIR_INSTRUCTIONS = {
 }
 
 
+DOCUMENT_CONSISTENCY_INSTRUCTIONS = {
+    "fr": (
+        "La question porte précisément sur le document {reference}. "
+        "Commence la première phrase par l'identification de ce document et "
+        "réponds d'abord à son sujet. "
+        "Réécris la réponse en utilisant uniquement les extraits fournis. "
+        "Ne mentionne aucun numéro de document ni aucune année absents des "
+        "extraits. Une référence secondaire ne peut être mentionnée qu'ensuite, "
+        "en indiquant clairement qu'il s'agit d'une référence."
+    ),
+    "ar": (
+        "يتعلق السؤال تحديدا بالوثيقة {reference}. ابدأ الجملة الأولى بتعريف هذه "
+        "الوثيقة وأجب أولا عن موضوعها. أعد كتابة الإجابة بالاعتماد "
+        "فقط على المقتطفات المقدمة. لا تذكر أي رقم وثيقة أو سنة غير موجودين "
+        "في المقتطفات. لا تذكر أي مرجع ثانوي إلا بعد ذلك، مع توضيح أنه مجرد مرجع."
+    ),
+}
+
+
 def build_rag_prompt(question: str, context: str) -> str:
     language = detect_question_language(question)
     return f"""
@@ -84,6 +103,28 @@ def build_repair_prompt(question: str, context: str) -> str:
 {QUESTION_LABEL[language]} : {question}
 
 {REPAIR_INSTRUCTIONS[language]}
+
+{LANGUAGE_INSTRUCTIONS[language]}
+""".strip()
+
+
+def build_document_consistency_prompt(
+    question: str,
+    context: str,
+    reference: str,
+) -> str:
+    language = detect_question_language(question)
+    instructions = DOCUMENT_CONSISTENCY_INSTRUCTIONS[language].format(
+        reference=reference
+    )
+    return f"""
+{PROMPT_INTRO[language]}
+
+{context}
+
+{QUESTION_LABEL[language]} : {question}
+
+{instructions}
 
 {LANGUAGE_INSTRUCTIONS[language]}
 """.strip()

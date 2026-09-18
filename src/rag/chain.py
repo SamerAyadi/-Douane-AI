@@ -18,7 +18,11 @@ from src.rag.language import (
     detect_question_language,
     is_readable_text,
 )
-from src.rag.prompts import build_rag_prompt, build_repair_prompt
+from src.rag.prompts import (
+    build_document_consistency_prompt,
+    build_rag_prompt,
+    build_repair_prompt,
+)
 from src.rag.retriever import DocumentRetriever
 
 
@@ -28,6 +32,29 @@ REASONING_LINE = re.compile(
     r"the user (?:is asking|asks)|je dois|voyons|analysons|"
     r"حسن[ًاا]|دعني|أحتاج)",
     flags=re.IGNORECASE,
+)
+
+DOCUMENT_REFERENCE_PATTERNS = (
+    re.compile(
+        r"(?<![\d_/-])(\d{1,4})\s*[_/-]\s*((?:19|20)\d{2})"
+        r"(?![\d_/-])"
+    ),
+    re.compile(
+        r"(?:النص|الوثيقة|القرار|المذكرة|المنشور)?\s*"
+        r"(?:عدد|رقم)\s*[:#-]?\s*(\d{1,4})\s*"
+        r"(?:لسنة|سنة)\s*((?:19|20)\d{2})"
+    ),
+    re.compile(
+        r"(?:document|texte|décret|decret|arrêté|arrete|note|circulaire)"
+        r"\s*(?:n(?:°|º|o)?|numéro|numero)?\s*[:#-]?\s*"
+        r"(\d{1,4})\s*(?:de|du|[_/-])\s*((?:19|20)\d{2})",
+        flags=re.IGNORECASE,
+    ),
+    re.compile(
+        r"(?:n(?:°|º|o)?|numéro|numero)\s*[:#-]?\s*(\d{1,4})"
+        r"\s*(?:de|du|[_/-])\s*((?:19|20)\d{2})",
+        flags=re.IGNORECASE,
+    ),
 )
 
 UNAVAILABLE_MESSAGES = {
@@ -354,6 +381,64 @@ def _strip_trailing_source(answer: str) -> str:
     ).rstrip()
 
 
+def _document_references_in_order(text: str) -> list[tuple[str, str]]:
+    matches = []
+    for pattern in DOCUMENT_REFERENCE_PATTERNS:
+        for match in pattern.finditer(text):
+            number, year = match.groups()
+            matches.append(
+                (match.start(), (str(int(number)), str(int(year))))
+            )
+
+    references = []
+    for _, reference in sorted(matches):
+        if not references or references[-1] != reference:
+            references.append(reference)
+    return references
+
+
+def _document_references(text: str) -> set[tuple[str, str]]:
+    return set(_document_references_in_order(text))
+
+
+def _reference_label(reference: tuple[str, str]) -> str:
+    number, year = reference
+    return f"{number.zfill(3)}/{year}"
+
+
+def _has_document_reference_conflict(
+    question: str,
+    answer: str,
+    retrieved_chunks: list[dict],
+) -> tuple[bool, tuple[str, str] | None]:
+    question_references = _document_references(question)
+    if len(question_references) != 1 or _is_unavailable(answer):
+        return False, None
+
+    target = next(iter(question_references))
+    answer_without_source = _strip_trailing_source(answer)
+    references_in_order = _document_references_in_order(answer_without_source)
+    answer_references = set(references_in_order)
+    foreign_references = answer_references - {target}
+    if not foreign_references:
+        return False, target
+
+    context_text = "\n".join(
+        f"{(chunk.get('metadata') or {}).get('source', '')}\n"
+        f"{chunk.get('content') or ''}"
+        for chunk in retrieved_chunks
+    )
+    context_references = _document_references(context_text)
+    unsupported_references = foreign_references - context_references
+    replaces_target = target not in answer_references
+    requested_document_not_first = references_in_order[0] != target
+    return bool(
+        unsupported_references
+        or replaces_target
+        or requested_document_not_first
+    ), target
+
+
 EVIDENCE_STOPWORDS = {
     "avec", "dans", "des", "est", "les", "pour", "que", "quel",
     "quelle", "sont", "une", "the", "what", "which",
@@ -475,6 +560,37 @@ class RAGChain:
 
             if _answer_needs_repair(answer, question, retrieved_chunks):
                 raise RuntimeError("Ollama returned an invalid answer after retrying.")
+
+            reference_conflict, target_reference = (
+                _has_document_reference_conflict(
+                    question,
+                    answer,
+                    retrieved_chunks,
+                )
+            )
+            if reference_conflict and target_reference is not None:
+                consistency_prompt = build_document_consistency_prompt(
+                    question=question,
+                    context=context,
+                    reference=_reference_label(target_reference),
+                )
+                consistent_answer = call_ollama(consistency_prompt)
+                still_conflicts, _ = _has_document_reference_conflict(
+                    question,
+                    consistent_answer,
+                    retrieved_chunks,
+                )
+                if (
+                    consistent_answer
+                    and not _is_unavailable(consistent_answer)
+                    and not _answer_needs_repair(
+                        consistent_answer,
+                        question,
+                        retrieved_chunks,
+                    )
+                    and not still_conflicts
+                ):
+                    answer = consistent_answer
 
             answer = _add_source_if_missing(answer, question, retrieved_chunks)
 
