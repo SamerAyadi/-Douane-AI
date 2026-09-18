@@ -1,5 +1,6 @@
 beautifulsoup4
 chromadb
+fastapi
 PyMuPDF
 pytesseract
 Pillow
@@ -8,3 +9,4 @@ python-dotenv
 requests
 sentence-transformers
 truststore
+uvicorn[standard]
