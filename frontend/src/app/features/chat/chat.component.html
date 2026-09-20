@@ -1,0 +1,66 @@
+<main class="chat-page">
+  <section class="chat-shell" aria-labelledby="page-title">
+    <header class="chat-header">
+      <div class="brand-mark" aria-hidden="true">D</div>
+      <div>
+        <p class="eyebrow">Douane-AI</p>
+        <h1 id="page-title">Assistant documentaire douanier</h1>
+        <p class="subtitle">اسأل عن الوثائق الرسمية بالفرنسية أو العربية</p>
+      </div>
+    </header>
+
+    <form class="question-form" (ngSubmit)="sendQuestion()">
+      <label for="question">Votre question / سؤالك</label>
+      <textarea
+        id="question"
+        name="question"
+        [(ngModel)]="question"
+        rows="4"
+        dir="auto"
+        placeholder="Ex. ما هو موضوع النص عدد 026 لسنة 2026؟"
+        [disabled]="loading"
+      ></textarea>
+
+      <button type="submit" [disabled]="loading || !question.trim()">
+        <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+        {{ loading ? 'Recherche en cours…' : 'Envoyer / إرسال' }}
+      </button>
+    </form>
+
+    <p *ngIf="loading" class="status-message" role="status">
+      Consultation des documents et génération de la réponse…
+    </p>
+
+    <div *ngIf="errorMessage" class="error-message" role="alert">
+      {{ errorMessage }}
+    </div>
+
+    <article
+      *ngIf="response"
+      class="answer-card"
+      [attr.dir]="response.language === 'ar' ? 'rtl' : 'ltr'"
+    >
+      <p class="answer-label">
+        {{ response.language === 'ar' ? 'الإجابة' : 'Réponse' }}
+      </p>
+      <p class="answer-text">{{ response.answer }}</p>
+
+      <section *ngIf="response.sources.length" class="sources">
+        <h2>{{ response.language === 'ar' ? 'المصادر' : 'Sources' }}</h2>
+        <ul>
+          <li *ngFor="let source of response.sources">
+            <span class="source-name">{{ source.source }}</span>
+            <span *ngIf="source.page !== null" class="source-page">
+              {{ response.language === 'ar' ? 'الصفحة' : 'page' }}
+              {{ source.page }}
+            </span>
+          </li>
+        </ul>
+      </section>
+
+      <p class="timing" dir="ltr">
+        Temps de réponse : {{ response.timing_seconds.total | number: '1.1-1' }} s
+      </p>
+    </article>
+  </section>
+</main>

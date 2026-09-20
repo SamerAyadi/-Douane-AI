@@ -9,3 +9,14 @@ data/processed/
 data/metadata/
 chroma_db/
 evaluation/results/
+# Angular frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Temporary presentation/build artifacts
+.codex-ppt-build-superviseur-*/
+artifacts/
+
+# Local notes
+whati did.txt
