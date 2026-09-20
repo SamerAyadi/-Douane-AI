@@ -23,6 +23,18 @@ export class ChatComponent {
   errorMessage = '';
   loading = false;
 
+  displaySourceName(source: string | null): string {
+    if (!source) {
+      return '';
+    }
+
+    const fileName = source.replace(/\\/g, '/').split('/').pop() || source;
+    const maxLength = 70;
+    return fileName.length > maxLength
+      ? `${fileName.slice(0, maxLength - 3)}...`
+      : fileName;
+  }
+
   sendQuestion(): void {
     const question = this.question.trim();
     if (!question || this.loading) {

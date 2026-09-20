@@ -9,58 +9,93 @@
       </div>
     </header>
 
-    <form class="question-form" (ngSubmit)="sendQuestion()">
-      <label for="question">Votre question / سؤالك</label>
-      <textarea
-        id="question"
-        name="question"
-        [(ngModel)]="question"
-        rows="4"
-        dir="auto"
-        placeholder="Ex. ما هو موضوع النص عدد 026 لسنة 2026؟"
-        [disabled]="loading"
-      ></textarea>
+    <div class="chat-content">
+      <form class="question-form" (ngSubmit)="sendQuestion()">
+        <label for="question">Votre question / سؤالك</label>
+        <textarea
+          id="question"
+          name="question"
+          [(ngModel)]="question"
+          rows="4"
+          dir="auto"
+          placeholder="Ex. ما هو موضوع النص عدد 026 لسنة 2026؟"
+          [disabled]="loading"
+        ></textarea>
 
-      <button type="submit" [disabled]="loading || !question.trim()">
-        <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
-        {{ loading ? 'Recherche en cours…' : 'Envoyer / إرسال' }}
-      </button>
-    </form>
+        <div class="form-actions">
+          <p class="input-hint">Français · العربية</p>
+          <button type="submit" [disabled]="loading || !question.trim()">
+            <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+            {{ loading ? 'Recherche en cours…' : 'Envoyer / إرسال' }}
+          </button>
+        </div>
+      </form>
 
-    <p *ngIf="loading" class="status-message" role="status">
-      Consultation des documents et génération de la réponse…
-    </p>
+      <div *ngIf="loading" class="status-message" role="status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>Consultation des documents et génération de la réponse…</span>
+      </div>
 
-    <div *ngIf="errorMessage" class="error-message" role="alert">
-      {{ errorMessage }}
+      <div *ngIf="errorMessage" class="error-message" role="alert">
+        <span class="error-icon" aria-hidden="true">!</span>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <article
+        *ngIf="response"
+        class="answer-card"
+        [class.answer-card--rtl]="response.language === 'ar'"
+        [class.answer-card--ltr]="response.language !== 'ar'"
+        [attr.dir]="response.language === 'ar' ? 'rtl' : 'ltr'"
+      >
+        <header class="answer-header">
+          <div>
+            <p class="answer-eyebrow">Douane-AI</p>
+            <h2 class="answer-title">
+              {{ response.language === 'ar' ? 'الإجابة' : 'Réponse' }}
+            </h2>
+          </div>
+          <span class="language-badge" dir="ltr">
+            {{ response.language === 'ar' ? 'AR' : 'FR' }}
+          </span>
+        </header>
+
+        <div class="answer-body">
+          <p class="answer-text">{{ response.answer }}</p>
+        </div>
+
+        <section *ngIf="response.sources.length" class="sources">
+          <h3 class="sources-title">
+            {{ response.language === 'ar' ? 'المصدر' : 'Source' }}
+          </h3>
+          <ul class="source-list">
+            <li *ngFor="let source of response.sources" class="source-card">
+              <span class="pdf-badge" aria-hidden="true">PDF</span>
+              <div class="source-document">
+                <span class="source-field-label">
+                  {{ response.language === 'ar' ? 'الوثيقة' : 'Document' }}
+                </span>
+                <span
+                  class="source-name"
+                  [title]="source.source || ''"
+                  dir="auto"
+                >
+                  {{ displaySourceName(source.source) }}
+                </span>
+              </div>
+              <div *ngIf="source.page !== null" class="source-page">
+                <span>{{ response.language === 'ar' ? 'الصفحة' : 'Page' }}</span>
+                <strong>{{ source.page }}</strong>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <footer class="answer-footer" dir="ltr">
+          <span>Temps de réponse</span>
+          <strong>{{ response.timing_seconds.total | number: '1.1-1' }} s</strong>
+        </footer>
+      </article>
     </div>
-
-    <article
-      *ngIf="response"
-      class="answer-card"
-      [attr.dir]="response.language === 'ar' ? 'rtl' : 'ltr'"
-    >
-      <p class="answer-label">
-        {{ response.language === 'ar' ? 'الإجابة' : 'Réponse' }}
-      </p>
-      <p class="answer-text">{{ response.answer }}</p>
-
-      <section *ngIf="response.sources.length" class="sources">
-        <h2>{{ response.language === 'ar' ? 'المصادر' : 'Sources' }}</h2>
-        <ul>
-          <li *ngFor="let source of response.sources">
-            <span class="source-name">{{ source.source }}</span>
-            <span *ngIf="source.page !== null" class="source-page">
-              {{ response.language === 'ar' ? 'الصفحة' : 'page' }}
-              {{ source.page }}
-            </span>
-          </li>
-        </ul>
-      </section>
-
-      <p class="timing" dir="ltr">
-        Temps de réponse : {{ response.timing_seconds.total | number: '1.1-1' }} s
-      </p>
-    </article>
   </section>
 </main>
