@@ -10,92 +10,146 @@
     </header>
 
     <div class="chat-content">
+      <section class="conversation-panel" aria-label="Conversation">
+        <div class="conversation-toolbar">
+          <div>
+            <p class="conversation-eyebrow">Session locale</p>
+            <h2>Conversation</h2>
+          </div>
+          <button
+            type="button"
+            class="clear-button"
+            (click)="clearChat()"
+            [disabled]="loading || messages.length === 0"
+          >
+            Effacer / مسح
+          </button>
+        </div>
+
+        <div #conversation class="conversation">
+          <div *ngIf="messages.length === 0 && !loading" class="empty-state">
+            <span class="empty-icon" aria-hidden="true">?</span>
+            <p>Posez une question sur les documents douaniers.</p>
+            <p dir="rtl">اطرح سؤالًا حول الوثائق الديوانية.</p>
+          </div>
+
+          <ng-container *ngFor="let message of messages">
+            <div
+              *ngIf="message.role === 'user'"
+              class="message-row message-row--user"
+              [class.message-row--rtl]="message.language === 'ar'"
+            >
+              <article
+                class="user-message"
+                [attr.dir]="message.language === 'ar' ? 'rtl' : 'ltr'"
+              >
+                <span class="message-role">
+                  {{ message.language === 'ar' ? 'سؤالك' : 'Votre question' }}
+                </span>
+                <p>{{ message.content }}</p>
+              </article>
+            </div>
+
+            <article
+              *ngIf="message.role === 'assistant'"
+              class="answer-card"
+              [class.answer-card--rtl]="message.language === 'ar'"
+              [class.answer-card--ltr]="message.language !== 'ar'"
+              [class.answer-card--error]="message.isError"
+              [attr.dir]="message.language === 'ar' ? 'rtl' : 'ltr'"
+            >
+              <header class="answer-header">
+                <div>
+                  <p class="answer-eyebrow">Douane-AI</p>
+                  <h3 class="answer-title">
+                    <ng-container *ngIf="!message.isError">
+                      {{ message.language === 'ar' ? 'الإجابة' : 'Réponse' }}
+                    </ng-container>
+                    <ng-container *ngIf="message.isError">
+                      {{ message.language === 'ar' ? 'تعذر إرسال الإجابة' : 'Erreur' }}
+                    </ng-container>
+                  </h3>
+                </div>
+                <span class="language-badge" dir="ltr">
+                  {{ message.language === 'ar' ? 'AR' : 'FR' }}
+                </span>
+              </header>
+
+              <div class="answer-body">
+                <p class="answer-text">{{ cleanAnswerText(message.content) }}</p>
+              </div>
+
+              <section *ngIf="message.sources?.length" class="sources">
+                <h4 class="sources-title">
+                  {{ message.language === 'ar' ? 'المصدر' : 'Source' }}
+                </h4>
+                <ul class="source-list">
+                  <li *ngFor="let source of message.sources" class="source-card">
+                    <span class="pdf-badge" aria-hidden="true">PDF</span>
+                    <div class="source-document">
+                      <span class="source-field-label">
+                        {{ message.language === 'ar' ? 'الوثيقة' : 'Document' }}
+                      </span>
+                      <span
+                        class="source-name"
+                        [title]="source.source || ''"
+                        dir="auto"
+                      >
+                        {{ displaySourceName(source.source) }}
+                      </span>
+                    </div>
+                    <div *ngIf="source.page !== null" class="source-page">
+                      <span>{{ message.language === 'ar' ? 'الصفحة' : 'Page' }}</span>
+                      <strong>{{ source.page }}</strong>
+                    </div>
+                  </li>
+                </ul>
+              </section>
+
+              <footer *ngIf="message.timing_seconds" class="answer-footer" dir="ltr">
+                <span>Temps de réponse</span>
+                <strong>{{ message.timing_seconds.total | number: '1.1-1' }} s</strong>
+              </footer>
+            </article>
+          </ng-container>
+
+          <article *ngIf="loading" class="typing-card" role="status" aria-live="polite">
+            <div class="typing-status">
+              <span></span><span></span><span></span>
+              <strong>Douane-AI · Recherche en cours…</strong>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <form class="question-form" (ngSubmit)="sendQuestion()">
         <label for="question">Votre question / سؤالك</label>
         <textarea
           id="question"
           name="question"
           [(ngModel)]="question"
-          rows="4"
+          rows="3"
           dir="auto"
           placeholder="Ex. ما هو موضوع النص عدد 026 لسنة 2026؟"
           [disabled]="loading"
         ></textarea>
 
+        <div *ngIf="inputError" class="input-error" role="alert">
+          {{ inputError }}
+        </div>
+
         <div class="form-actions">
           <p class="input-hint">Français · العربية</p>
-          <button type="submit" [disabled]="loading || !question.trim()">
+          <button
+            type="submit"
+            class="send-button"
+            [disabled]="loading || !question.trim()"
+          >
             <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
             {{ loading ? 'Recherche en cours…' : 'Envoyer / إرسال' }}
           </button>
         </div>
       </form>
-
-      <div *ngIf="loading" class="status-message" role="status">
-        <span class="status-dot" aria-hidden="true"></span>
-        <span>Consultation des documents et génération de la réponse…</span>
-      </div>
-
-      <div *ngIf="errorMessage" class="error-message" role="alert">
-        <span class="error-icon" aria-hidden="true">!</span>
-        <span>{{ errorMessage }}</span>
-      </div>
-
-      <article
-        *ngIf="response"
-        class="answer-card"
-        [class.answer-card--rtl]="response.language === 'ar'"
-        [class.answer-card--ltr]="response.language !== 'ar'"
-        [attr.dir]="response.language === 'ar' ? 'rtl' : 'ltr'"
-      >
-        <header class="answer-header">
-          <div>
-            <p class="answer-eyebrow">Douane-AI</p>
-            <h2 class="answer-title">
-              {{ response.language === 'ar' ? 'الإجابة' : 'Réponse' }}
-            </h2>
-          </div>
-          <span class="language-badge" dir="ltr">
-            {{ response.language === 'ar' ? 'AR' : 'FR' }}
-          </span>
-        </header>
-
-        <div class="answer-body">
-          <p class="answer-text">{{ response.answer }}</p>
-        </div>
-
-        <section *ngIf="response.sources.length" class="sources">
-          <h3 class="sources-title">
-            {{ response.language === 'ar' ? 'المصدر' : 'Source' }}
-          </h3>
-          <ul class="source-list">
-            <li *ngFor="let source of response.sources" class="source-card">
-              <span class="pdf-badge" aria-hidden="true">PDF</span>
-              <div class="source-document">
-                <span class="source-field-label">
-                  {{ response.language === 'ar' ? 'الوثيقة' : 'Document' }}
-                </span>
-                <span
-                  class="source-name"
-                  [title]="source.source || ''"
-                  dir="auto"
-                >
-                  {{ displaySourceName(source.source) }}
-                </span>
-              </div>
-              <div *ngIf="source.page !== null" class="source-page">
-                <span>{{ response.language === 'ar' ? 'الصفحة' : 'Page' }}</span>
-                <strong>{{ source.page }}</strong>
-              </div>
-            </li>
-          </ul>
-        </section>
-
-        <footer class="answer-footer" dir="ltr">
-          <span>Temps de réponse</span>
-          <strong>{{ response.timing_seconds.total | number: '1.1-1' }} s</strong>
-        </footer>
-      </article>
     </div>
   </section>
 </main>

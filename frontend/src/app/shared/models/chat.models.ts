@@ -9,6 +9,17 @@ export interface SourceItem {
   distance?: number | null;
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  language: 'ar' | 'fr';
+  sources?: SourceItem[];
+  timing_seconds?: {
+    total: number;
+  };
+  isError?: boolean;
+}
+
 export interface ChatResponse {
   question: string;
   answer: string;
