@@ -3,11 +3,13 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException
 
 from src.api.schemas import ChatRequest, ChatResponse
+from src.api.services.question_rewriter import rewrite_follow_up_question
 from src.api.services.rag_service import OllamaUnavailableError, ask_question
 from src.db.models import ChatSession
 from src.db.repositories import (
     create_chat_session,
     get_chat_session,
+    list_chat_messages,
     save_chat_message,
 )
 
@@ -35,11 +37,20 @@ def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
     chat_session = _resolve_session(request.session_id, question)
+    previous_messages = []
+    if (
+        chat_session is not None
+        and request.session_id is not None
+        and chat_session.id == request.session_id
+    ):
+        previous_messages = list_chat_messages(chat_session.id)
+
+    rag_question = rewrite_follow_up_question(question, previous_messages)
     if chat_session is not None:
         save_chat_message(chat_session.id, "user", question)
 
     try:
-        result = ask_question(question)
+        result = ask_question(rag_question)
     except OllamaUnavailableError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except Exception as error:
@@ -47,6 +58,8 @@ def chat(request: ChatRequest) -> ChatResponse:
             status_code=500,
             detail="The RAG pipeline could not generate a valid answer",
         ) from error
+
+    result["question"] = question
 
     if chat_session is not None:
         save_chat_message(
