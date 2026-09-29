@@ -1,11 +1,21 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, ElementRef, ViewChild, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 
 import { ChatService } from '../../core/services/chat.service';
-import { ChatMessage } from '../../shared/models/chat.models';
+import {
+  ChatMessage,
+  ChatSession,
+  StoredChatMessage,
+} from '../../shared/models/chat.models';
 
 
 @Component({
@@ -15,15 +25,97 @@ import { ChatMessage } from '../../shared/models/chat.models';
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.css',
 })
-export class ChatComponent {
+export class ChatComponent implements OnInit {
   private readonly chatService = inject(ChatService);
 
   @ViewChild('conversation') conversation?: ElementRef<HTMLElement>;
 
   question = '';
   messages: ChatMessage[] = [];
+  sessions: ChatSession[] = [];
+  activeSessionId: string | null = null;
+  loadingSessionId: string | null = null;
   inputError = '';
+  sessionsError = '';
   loading = false;
+  sessionsLoading = false;
+
+  get busy(): boolean {
+    return this.loading || this.loadingSessionId !== null;
+  }
+
+  ngOnInit(): void {
+    this.loadSessions();
+  }
+
+  loadSessions(showLoading = true): void {
+    if (showLoading) {
+      this.sessionsLoading = true;
+    }
+    this.sessionsError = '';
+
+    this.chatService
+      .getSessions()
+      .pipe(
+        finalize(() => {
+          if (showLoading) {
+            this.sessionsLoading = false;
+          }
+        }),
+      )
+      .subscribe({
+        next: (sessions) => {
+          this.sessions = sessions;
+        },
+        error: () => {
+          this.sessionsError =
+            'Historique indisponible. Le chat reste utilisable. / تعذر تحميل المحادثات المحفوظة.';
+        },
+      });
+  }
+
+  loadSession(session: ChatSession): void {
+    if (this.busy || session.id === this.activeSessionId) {
+      return;
+    }
+
+    this.loadingSessionId = session.id;
+    this.sessionsError = '';
+
+    this.chatService
+      .getSessionMessages(session.id)
+      .pipe(
+        finalize(() => {
+          this.loadingSessionId = null;
+          this.scrollToLatest();
+        }),
+      )
+      .subscribe({
+        next: (storedMessages) => {
+          this.activeSessionId = session.id;
+          this.messages = storedMessages.map((message) =>
+            this.mapStoredMessage(message),
+          );
+          this.inputError = '';
+          this.scrollToLatest();
+        },
+        error: () => {
+          this.sessionsError =
+            'Impossible de charger cette conversation. / تعذر تحميل هذه المحادثة.';
+        },
+      });
+  }
+
+  newChat(): void {
+    if (this.busy) {
+      return;
+    }
+
+    this.activeSessionId = null;
+    this.messages = [];
+    this.question = '';
+    this.inputError = '';
+  }
 
   displaySourceName(source: string | null): string {
     if (!source) {
@@ -61,7 +153,7 @@ export class ChatComponent {
 
   sendQuestion(): void {
     const question = this.question.trim();
-    if (!question || this.loading) {
+    if (!question || this.busy) {
       if (!question) {
         this.inputError = 'Veuillez saisir une question. / الرجاء إدخال سؤال.';
       }
@@ -76,7 +168,7 @@ export class ChatComponent {
     this.scrollToLatest();
 
     this.chatService
-      .askQuestion(question)
+      .askQuestion(question, this.activeSessionId)
       .pipe(
         finalize(() => {
           this.loading = false;
@@ -85,6 +177,10 @@ export class ChatComponent {
       )
       .subscribe({
         next: (response) => {
+          if (response.session_id) {
+            this.activeSessionId = response.session_id;
+          }
+
           this.messages.push({
             role: 'assistant',
             content: response.answer,
@@ -92,6 +188,7 @@ export class ChatComponent {
             sources: response.sources,
             timing_seconds: response.timing_seconds,
           });
+          this.loadSessions(false);
           this.scrollToLatest();
         },
         error: (error: HttpErrorResponse) => {
@@ -107,11 +204,27 @@ export class ChatComponent {
       });
   }
 
-  clearChat(): void {
-    if (!this.loading) {
-      this.messages = [];
-      this.inputError = '';
+  trackSession(_: number, session: ChatSession): string {
+    return session.id;
+  }
+
+  private mapStoredMessage(message: StoredChatMessage): ChatMessage {
+    return {
+      role: message.role,
+      content: message.content,
+      language: this.normalizeLanguage(message.language, message.content),
+      sources: message.sources ?? [],
+    };
+  }
+
+  private normalizeLanguage(
+    language: string | null,
+    content: string,
+  ): 'ar' | 'fr' {
+    if (language === 'ar' || language === 'fr') {
+      return language;
     }
+    return this.detectMessageLanguage(content);
   }
 
   private detectMessageLanguage(text: string): 'ar' | 'fr' {
