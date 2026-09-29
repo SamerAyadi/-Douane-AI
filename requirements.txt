@@ -8,5 +8,7 @@ pdfplumber
 python-dotenv
 requests
 sentence-transformers
+SQLAlchemy
+psycopg[binary]
 truststore
 uvicorn[standard]

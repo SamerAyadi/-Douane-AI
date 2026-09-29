@@ -23,6 +23,7 @@ CHROMA_DB_DIR = ROOT_DIR / "chroma_db"
 
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen3:4b")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip() or None
 
 EMBEDDING_MODEL = os.getenv(
     "EMBEDDING_MODEL",
