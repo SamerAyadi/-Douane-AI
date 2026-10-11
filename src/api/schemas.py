@@ -48,6 +48,32 @@ class StoredChatMessage(BaseModel):
     created_at: datetime
 
 
+class UserCreate(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+    password: str = Field(min_length=8, max_length=72)
+    full_name: str | None = Field(default=None, max_length=255)
+
+
+class UserRead(BaseModel):
+    id: UUID
+    email: str
+    full_name: str | None = None
+    is_active: bool
+    is_admin: bool
+    created_at: datetime
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+    password: str = Field(min_length=1, max_length=72)
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: Literal["bearer"]
+    user: UserRead
+
+
 class HealthResponse(BaseModel):
     status: Literal["ok", "degraded"]
     rag_available: bool

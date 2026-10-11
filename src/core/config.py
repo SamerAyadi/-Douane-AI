@@ -1,7 +1,11 @@
+import logging
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+
+logger = logging.getLogger(__name__)
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -24,6 +28,19 @@ CHROMA_DB_DIR = ROOT_DIR / "chroma_db"
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen3:4b")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip() or None
+
+_DEVELOPMENT_JWT_SECRET = "development-only-change-this-secret"
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "").strip() or _DEVELOPMENT_JWT_SECRET
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256").strip() or "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = int(
+    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
+)
+
+if JWT_SECRET_KEY == _DEVELOPMENT_JWT_SECRET:
+    logger.warning(
+        "JWT_SECRET_KEY is not configured; using a development-only secret. "
+        "Set JWT_SECRET_KEY in .env before production."
+    )
 
 EMBEDDING_MODEL = os.getenv(
     "EMBEDDING_MODEL",

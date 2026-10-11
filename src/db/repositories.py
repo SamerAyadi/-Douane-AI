@@ -5,7 +5,8 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
-from src.db.models import ChatMessage, ChatSession, utc_now
+from src.core.security import hash_password, verify_password
+from src.db.models import ChatMessage, ChatSession, User, utc_now
 from src.db.session import database_session
 
 
@@ -103,4 +104,79 @@ def list_chat_messages(session_id: UUID) -> list[ChatMessage]:
             return list(database.scalars(statement).all())
     except SQLAlchemyError as error:
         _database_warning("message listing", error)
+        return []
+
+
+def create_user(
+    email: str,
+    password: str,
+    full_name: str | None = None,
+    is_admin: bool = False,
+) -> User | None:
+    normalized_email = email.strip().lower()
+    hashed_password = hash_password(password)
+    try:
+        with database_session() as database:
+            if database is None:
+                return None
+
+            user = User(
+                email=normalized_email,
+                full_name=full_name.strip() if full_name else None,
+                hashed_password=hashed_password,
+                is_admin=is_admin,
+            )
+            database.add(user)
+            database.commit()
+            database.refresh(user)
+            return user
+    except SQLAlchemyError as error:
+        _database_warning("user creation", error)
+        return None
+
+
+def get_user_by_email(email: str) -> User | None:
+    normalized_email = email.strip().lower()
+    try:
+        with database_session() as database:
+            if database is None:
+                return None
+            statement = select(User).where(User.email == normalized_email)
+            return database.scalar(statement)
+    except SQLAlchemyError as error:
+        _database_warning("user lookup", error)
+        return None
+
+
+def get_user_by_id(user_id: UUID) -> User | None:
+    try:
+        with database_session() as database:
+            if database is None:
+                return None
+            return database.get(User, user_id)
+    except SQLAlchemyError as error:
+        _database_warning("user lookup", error)
+        return None
+
+
+def authenticate_user(email: str, password: str) -> User | None:
+    user = get_user_by_email(email)
+    if (
+        user is None
+        or not user.is_active
+        or not verify_password(password, user.hashed_password)
+    ):
+        return None
+    return user
+
+
+def list_users() -> list[User]:
+    try:
+        with database_session() as database:
+            if database is None:
+                return []
+            statement = select(User).order_by(User.created_at.asc())
+            return list(database.scalars(statement).all())
+    except SQLAlchemyError as error:
+        _database_warning("user listing", error)
         return []

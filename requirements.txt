@@ -5,6 +5,9 @@ PyMuPDF
 pytesseract
 Pillow
 pdfplumber
+passlib[bcrypt]
+bcrypt==4.0.1
+PyJWT
 python-dotenv
 requests
 sentence-transformers
