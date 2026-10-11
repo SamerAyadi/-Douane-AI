@@ -1,44 +1,114 @@
 # Douane-AI
 
-Douane-AI is a multilingual retrieval-augmented generation (RAG) project for official Tunisian customs documents. Official PDFs are collected separately from retrieval and generation, then ingested into a local ChromaDB collection with multilingual E5 embeddings.
+Douane-AI est un assistant documentaire RAG multilingue destiné aux documents officiels de la Douane tunisienne. Il collecte les PDF publics, extrait leur texte — avec OCR pour les documents scannés — puis répond localement en arabe ou en français avec une citation de la source.
 
-## Architecture
+## État actuel
+
+- collecte des PDF officiels et de leurs métadonnées ;
+- extraction native PyMuPDF/pdfplumber et OCR Tesseract `ara+fra` ;
+- nettoyage, découpage et indexation dans ChromaDB avec `multilingual-e5-large` ;
+- recherche sémantique multilingue et recherche prioritaire par numéro de document ;
+- génération locale avec Qwen3 via Ollama ;
+- citations document/page et réponse prudente lorsque l'information est absente ;
+- API FastAPI ;
+- sessions et messages persistés dans PostgreSQL ;
+- réécriture déterministe des questions de suivi ambiguës ;
+- interface Angular avec historique, RTL/LTR et cartes de sources ;
+- jeu d'évaluation local pour la recherche, la génération et le risque d'hallucination.
+
+## Architecture complète
+
+```text
+Site officiel de la Douane
+        |
+        v
+Scraper requests + BeautifulSoup
+        |----> PDF officiels : data/raw/official/ar|fr/
+        `----> métadonnées : data/metadata/douane_documents.csv
+        |
+        v
+Ingestion page par page
+PyMuPDF -> contrôle qualité -> pdfplumber -> OCR PSM 3/6/11
+        |
+        v
+Meilleur texte -> nettoyage -> chunks + métadonnées
+        |
+        v
+Embeddings multilingual-e5-large -> ChromaDB
+
+Utilisateur Angular
+        |
+        v
+FastAPI /chat
+        |----> PostgreSQL : sessions et messages
+        |----> réécriture d'une question de suivi si nécessaire
+        v
+Retriever ChromaDB -> contexte pertinent
+        v
+Qwen3/Ollama -> réponse arabe ou française + source
+        |
+        v
+FastAPI -> sauvegarde de la réponse -> Angular
+```
+
+### Structure principale
 
 ```text
 src/
   scraping/
-    scrape_douane_pdfs.py   # HTML table parsing and PDF downloads
+    scrape_douane_pdfs.py       # téléchargement des PDF et métadonnées
   rag/
-    ingest.py               # PDF extraction, quality checks, chunking, embeddings
-    retriever.py            # language-aware ChromaDB retrieval
-    chain.py                 # sourced French/Arabic generation with Ollama
+    ingest.py                   # extraction, OCR, qualité, nettoyage, chunks
+    language.py                 # langue et lisibilité arabe/français
+    retriever.py                # recherche ChromaDB multilingue
+    prompts.py                  # règles de réponse et de citation
+    chain.py                    # orchestration RAG avec Ollama
+  api/
+    main.py                     # application FastAPI et CORS
+    schemas.py                  # schémas Pydantic
+    routes/
+      chat.py                   # POST /chat
+      health.py                 # GET /health
+      sessions.py               # historique des conversations
+    services/
+      rag_service.py            # adaptateur API vers la chaîne RAG
+      question_rewriter.py      # contexte des questions de suivi
+  db/
+    session.py                  # connexion SQLAlchemy/PostgreSQL
+    models.py                   # ChatSession et ChatMessage
+    repositories.py             # opérations simples de persistance
 
-data/
-  sample/                   # fake development PDFs only
-  raw/
-    official/
-      ar/                   # scraped Arabic PDFs (ignored by Git)
-      fr/                   # scraped French PDFs (ignored by Git)
-  metadata/                 # scraper CSV metadata (ignored by Git)
-chroma_db/                  # local vector database (ignored by Git)
+frontend/src/app/
+  core/services/chat.service.ts
+  shared/models/chat.models.ts
+  features/chat/                # interface, historique, RTL/LTR, sources
+
+evaluation/
+  questions.json
+  run_evaluation.py
+  corpus_quality_report.py
+
+scripts/
+  init_db.py
 ```
 
-Scraping is deliberately independent from ingestion and generation. `ingest.py` recursively reads every PDF under `data/raw/`, including the official language subfolders.
+## Composants techniques
 
-## How to explain the project
+| Couche | Technologie | Rôle |
+|---|---|---|
+| Collecte | requests, BeautifulSoup | Télécharger les documents officiels |
+| Extraction | PyMuPDF, pdfplumber | Extraire les PDF numériques |
+| OCR | Tesseract, pytesseract, Pillow | Lire les pages scannées en arabe/français |
+| Embeddings | multilingual-e5-large | Représentation multilingue des chunks |
+| Base vectorielle | ChromaDB | Recherche sémantique locale |
+| LLM | Qwen3 4B, Ollama | Génération locale de réponses sourcées |
+| API | FastAPI, Pydantic | Exposer le RAG et l'historique |
+| Persistance | PostgreSQL, SQLAlchemy | Sauvegarder sessions et messages |
+| Frontend | Angular | Interface de conversation bilingue |
 
-The application follows four simple steps:
+## Installation
 
-1. **Scraping:** download official PDFs and save their metadata.
-2. **Ingestion:** compare normal PDF extraction, use multi-layout OCR when quality is weak, keep the best page text, split it into chunks, and store the embeddings in ChromaDB.
-3. **Retrieval:** embed the user's question and retrieve the most relevant readable chunks, preferring the same language.
-4. **Generation:** send only the retrieved context to local Qwen3 through Ollama, then return a short Arabic or French answer with the real source and page.
-
-All processing stays local. The modules keep separate responsibilities, while `python -m src.rag.ingest`, `python -m src.rag.retriever`, and `python -m src.rag.chain` form the complete RAG workflow.
-
-## Setup
-
-Activate the existing virtual environment and install dependencies:
+### Python
 
 ```powershell
 cd D:\Douane-AI
@@ -46,99 +116,157 @@ cd D:\Douane-AI
 python -m pip install -r requirements.txt
 ```
 
-Ollama must be running locally and the configured model must be available:
+### Ollama
 
 ```powershell
 ollama pull qwen3:4b
 ```
 
-### Windows OCR setup
+### Tesseract sous Windows
 
-`pytesseract` is only the Python wrapper. Install the Tesseract OCR engine separately by following the [official Windows installation guidance](https://github.com/tesseract-ocr/tessdoc/blob/main/Installation.md).
-
-During installation, include French and Arabic language data. Verify that `ara` and `fra` are available:
+Installer Tesseract et les langues `ara` et `fra`, puis vérifier :
 
 ```powershell
 & "C:\Program Files\Tesseract-OCR\tesseract.exe" --list-langs
 ```
 
-If Tesseract is not on `PATH`, add these values to `.env`:
+### Variables `.env`
 
 ```dotenv
+OLLAMA_BASE_URL=http://localhost:11434
+LLM_MODEL=qwen3:4b
+DATABASE_URL=postgresql+psycopg://douane_user:douane_password@localhost:5432/douane_ai
 OCR_ENABLED=true
 OCR_LANGUAGES=ara+fra
 TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
 ```
 
-The language files are normally named `ara.traineddata` and `fra.traineddata` inside `C:\Program Files\Tesseract-OCR\tessdata`.
+Ne jamais versionner `.env`, les PDF officiels, les métadonnées réelles ou `chroma_db/`.
 
-## Workflow
+## Workflow des données
 
-### 1. Scrape official PDFs
-
-First inspect a page without downloading anything:
+### 1. Scraper les documents officiels
 
 ```powershell
-python -m src.scraping.scrape_douane_pdfs --url "https://www.douane.gov.tn/ar/bulletin-officiel-des-douanes-2/" --dry-run --limit 5
+python -m src.scraping.scrape_douane_pdfs --url "https://www.douane.gov.tn/ar/textes-dapplication/"
 ```
 
-Download every PDF listed in the page tables:
+Pour un test limité :
 
 ```powershell
-python -m src.scraping.scrape_douane_pdfs --url "https://www.douane.gov.tn/ar/bulletin-officiel-des-douanes-2/"
+python -m src.scraping.scrape_douane_pdfs --url "https://www.douane.gov.tn/ar/textes-dapplication/" --limit 5
 ```
 
-The scraper:
-
-- reads Arabic, French, or English table headers;
-- extracts document number, date, title, PDF URL, and detected language;
-- saves Arabic PDFs in `data/raw/official/ar/` and French PDFs in `data/raw/official/fr/`;
-- creates `data/metadata/douane_documents.csv`;
-- skips files already recorded locally;
-- uses safe filenames containing document number and title.
-
-Use `--limit N` for a small download test.
-
-### 2. Ingest the downloaded PDFs
+### 2. Extraire et indexer
 
 ```powershell
 python -m src.rag.ingest
 ```
 
-Ingestion evaluates every page independently:
+Chaque page suit ce pipeline :
 
-1. Try PyMuPDF extraction.
-2. If its quality is weak, try pdfplumber.
-3. If native extraction is still weak, render the page at 300 DPI and run Tesseract PSM 3 with `ara+fra`.
-4. For low-quality or table-like OCR, also try PSM 6 and PSM 11.
-5. Keep the candidate with the best quality score, clean only obvious whitespace/junk, and preserve the extraction method, quality score, source, and page in Chroma metadata.
+1. extraction PyMuPDF ;
+2. contrôle de qualité ;
+3. essai pdfplumber si nécessaire ;
+4. OCR Tesseract PSM 3 si le texte reste faible ;
+5. OCR PSM 6 et 11 pour les pages difficiles ou tabulaires ;
+6. sélection du meilleur résultat ;
+7. nettoyage léger du texte ;
+8. création des chunks ;
+9. embeddings ;
+10. stockage dans ChromaDB avec source, URL, page, langue, méthode et score de qualité.
 
-After changing extraction logic or adding PDFs, run ingestion again so ChromaDB is rebuilt from the new text.
-
-### 3. Test retrieval
+### 3. Tester le RAG
 
 ```powershell
 python -m src.rag.retriever
-```
-
-### 4. Test the complete chain
-
-Ensure Ollama is running, then execute:
-
-```powershell
 python -m src.rag.chain
 ```
 
-## Data and Git safety
+### 4. Évaluer
 
-Real downloads, extracted data, scraper metadata, environment files, and ChromaDB are excluded by `.gitignore`. Do not force-add official PDFs or metadata to GitHub. Fake development documents belong only in `data/sample/`; production ingestion reads `data/raw/`.
+```powershell
+python -m evaluation.run_evaluation --mode retrieval
+python -m evaluation.run_evaluation --mode chain
+```
 
-## Known limitations
+Dernière évaluation enregistrée, sur 18 questions :
 
-- The current Douane bulletin page exposes its PDF links in server-rendered HTML, so `requests` and BeautifulSoup are sufficient. If another page loads its table only after JavaScript runs, this scraper will report that no PDF links were found; a Playwright-based page fetcher can be added later without changing the RAG modules.
-- OCR is slower than normal extraction and its accuracy depends on scan resolution, page rotation, fonts, and image quality.
-- Alternative OCR modes are conditional, so table-like pages take longer to ingest than ordinary pages.
-- The quality score detects broad corruption but cannot guarantee that every isolated OCR error, such as `II` being read as `IT`, is corrected.
-- If every extraction candidate is poor, the page is stored as unreadable metadata and excluded by normal retrieval.
-- Tesseract is an external program. Installing `pytesseract` does not install the engine or the `ara` and `fra` language files.
-- Scraper language routing uses explicit source filename markers first, title text second, and the page language as a final fallback. The generated filename does not invent a language marker. Ingestion independently checks readable PDF text before using the `ar/fr` folder as a fallback.
+- document correct : `16/16` questions répondables ;
+- page correcte dans le top 3 : `16/16` ;
+- langue correcte : `18/18` ;
+- questions absentes correctement traitées : `2/2` ;
+- score global des contrôles : `94 %` ;
+- temps total moyen local : environ `17 s`.
+
+## Base PostgreSQL
+
+Créer la base et configurer `DATABASE_URL`, puis :
+
+```powershell
+python scripts/init_db.py
+```
+
+Tables :
+
+- `chat_sessions` : identifiant UUID, titre, dates ;
+- `chat_messages` : session, rôle, contenu, langue, sources JSON, date.
+
+Si PostgreSQL est indisponible, `/chat` continue à fonctionner sans persistance.
+
+## Démarrer l'application
+
+Terminal 1 — Ollama :
+
+```powershell
+ollama serve
+```
+
+Terminal 2 — API :
+
+```powershell
+cd D:\Douane-AI
+python -m uvicorn src.api.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Terminal 3 — Angular :
+
+```powershell
+cd D:\Douane-AI\frontend
+npm install
+npm start -- --host 127.0.0.1 --port 4200
+```
+
+Ouvrir :
+
+- interface : http://127.0.0.1:4200
+- documentation API : http://127.0.0.1:8000/docs
+- santé API : http://127.0.0.1:8000/health
+
+## API
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| GET | `/` | Informations générales |
+| GET | `/health` | État de l'API et d'Ollama |
+| POST | `/chat` | Poser une question, avec `session_id` optionnel |
+| GET | `/sessions` | Lister les conversations persistées |
+| GET | `/sessions/{session_id}/messages` | Charger les messages d'une session |
+
+Une question courte comme `اشرح ذلك أكثر` est réécrite en interne avec le contexte récent. Le texte original reste celui enregistré en base et retourné à l'interface.
+
+## Documents PFE
+
+- [Résumé technique](docs/PFE_PROGRESS.md)
+- [Checklist de test](docs/TEST_CHECKLIST.md)
+- [Vue générale de l'application](docs/screenshots/01_application_overview.png)
+- [Conversation arabe persistée avec source](docs/screenshots/02_arabic_conversation_source.png)
+- [Documentation FastAPI/Swagger](docs/screenshots/03_fastapi_swagger.png)
+
+## Limites actuelles
+
+- l'OCR reste sensible à la qualité du scan, aux tableaux et aux polices ;
+- le modèle local 4B peut omettre un détail malgré un bon contexte ;
+- le temps de réponse dépend du matériel local ;
+- la réécriture conversationnelle est déterministe et volontairement simple ;
+- l'authentification, les rôles, l'administration documentaire et le déploiement ne sont pas encore implémentés.
