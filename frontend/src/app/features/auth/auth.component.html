@@ -1,0 +1,92 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="auth-title">
+    <div class="auth-brand">
+      <div class="brand-mark" aria-hidden="true">D</div>
+      <div>
+        <p class="brand-name">Douane-AI</p>
+        <p class="brand-description">Assistant documentaire douanier</p>
+      </div>
+    </div>
+
+    <div class="auth-content">
+      <p class="eyebrow">Accès sécurisé</p>
+      <h1 id="auth-title">
+        {{ registerMode ? 'Créer un compte' : 'Bienvenue' }}
+      </h1>
+      <p class="auth-intro">
+        {{
+          registerMode
+            ? 'Créez votre compte pour accéder à l’assistant.'
+            : 'Connectez-vous pour accéder à votre espace Douane-AI.'
+        }}
+      </p>
+
+      <form (ngSubmit)="submit()">
+        <div *ngIf="registerMode" class="form-field">
+          <label for="full-name">Nom complet</label>
+          <input
+            id="full-name"
+            name="fullName"
+            type="text"
+            [(ngModel)]="fullName"
+            autocomplete="name"
+            placeholder="Votre nom"
+            [disabled]="loading"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="email">Adresse e-mail</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            [(ngModel)]="email"
+            autocomplete="email"
+            placeholder="nom@exemple.com"
+            [disabled]="loading"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="password">Mot de passe</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            [(ngModel)]="password"
+            [autocomplete]="registerMode ? 'new-password' : 'current-password'"
+            placeholder="8 caractères minimum"
+            [disabled]="loading"
+          />
+        </div>
+
+        <div *ngIf="errorMessage" class="auth-error" role="alert">
+          {{ errorMessage }}
+        </div>
+
+        <button class="submit-button" type="submit" [disabled]="loading">
+          <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+          {{
+            loading
+              ? 'Veuillez patienter…'
+              : registerMode
+                ? 'Créer mon compte'
+                : 'Se connecter'
+          }}
+        </button>
+      </form>
+
+      <div class="mode-switch">
+        <span>
+          {{ registerMode ? 'Vous avez déjà un compte ?' : 'Pas encore de compte ?' }}
+        </span>
+        <button type="button" (click)="toggleMode()" [disabled]="loading">
+          {{ registerMode ? 'Se connecter' : 'Créer un compte' }}
+        </button>
+      </div>
+
+      <p class="arabic-note" dir="rtl">منصة ذكية للبحث في الوثائق الديوانية الرسمية</p>
+    </div>
+  </section>
+</main>

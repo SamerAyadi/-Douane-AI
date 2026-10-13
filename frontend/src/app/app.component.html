@@ -1,1 +1,31 @@
-<app-chat></app-chat>
+<ng-container *ngIf="authReady; else validatingSession">
+  <ng-container *ngIf="currentUser$ | async as user; else authScreen">
+    <div class="authenticated-app">
+      <header class="account-bar">
+        <div class="account-brand">
+          <span class="account-logo" aria-hidden="true">D</span>
+          <span>Douane-AI</span>
+        </div>
+        <div class="account-actions">
+          <div class="account-user">
+            <strong>{{ user.full_name || user.email }}</strong>
+            <span *ngIf="user.full_name">{{ user.email }}</span>
+          </div>
+          <button type="button" (click)="logout()">Déconnexion</button>
+        </div>
+      </header>
+      <app-chat></app-chat>
+    </div>
+  </ng-container>
+
+  <ng-template #authScreen>
+    <app-auth></app-auth>
+  </ng-template>
+</ng-container>
+
+<ng-template #validatingSession>
+  <main class="session-check" role="status" aria-live="polite">
+    <span class="session-spinner" aria-hidden="true"></span>
+    <p>Vérification de la session…</p>
+  </main>
+</ng-template>
