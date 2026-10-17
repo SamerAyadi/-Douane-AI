@@ -40,6 +40,8 @@ class User(Base):
         nullable=False,
     )
 
+    chat_sessions: Mapped[list[ChatSession]] = relationship(back_populates="user")
+
 
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
@@ -48,6 +50,12 @@ class ChatSession(Base):
         PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4
     )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    user_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True),
+        ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, nullable=False
     )
@@ -58,6 +66,7 @@ class ChatSession(Base):
         nullable=False,
     )
 
+    user: Mapped[User | None] = relationship(back_populates="chat_sessions")
     messages: Mapped[list[ChatMessage]] = relationship(
         back_populates="session",
         cascade="all, delete-orphan",

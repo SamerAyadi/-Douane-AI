@@ -2,7 +2,7 @@ import logging
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.core.security import hash_password, verify_password
@@ -17,13 +17,16 @@ def _database_warning(action: str, error: Exception) -> None:
     logger.warning("Database %s failed; persistence was skipped: %s", action, error)
 
 
-def create_chat_session(title: str | None = None) -> ChatSession | None:
+def create_chat_session(
+    title: str | None = None,
+    user_id: UUID | None = None,
+) -> ChatSession | None:
     try:
         with database_session() as database:
             if database is None:
                 return None
 
-            chat_session = ChatSession(title=title)
+            chat_session = ChatSession(title=title, user_id=user_id)
             database.add(chat_session)
             database.commit()
             database.refresh(chat_session)
@@ -41,6 +44,51 @@ def get_chat_session(session_id: UUID) -> ChatSession | None:
             return database.get(ChatSession, session_id)
     except SQLAlchemyError as error:
         _database_warning("session lookup", error)
+        return None
+
+
+def get_chat_session_for_user(
+    session_id: UUID,
+    user_id: UUID | None,
+) -> ChatSession | None:
+    try:
+        with database_session() as database:
+            if database is None:
+                return None
+
+            statement = select(ChatSession).where(ChatSession.id == session_id)
+            if user_id is None:
+                statement = statement.where(ChatSession.user_id.is_(None))
+            else:
+                statement = statement.where(ChatSession.user_id == user_id)
+            return database.scalar(statement)
+    except SQLAlchemyError as error:
+        _database_warning("user session lookup", error)
+        return None
+
+
+def assign_session_to_user(
+    session_id: UUID,
+    user_id: UUID,
+) -> ChatSession | None:
+    try:
+        with database_session() as database:
+            if database is None:
+                return None
+
+            statement = (
+                update(ChatSession)
+                .where(
+                    ChatSession.id == session_id,
+                    ChatSession.user_id.is_(None),
+                )
+                .values(user_id=user_id, updated_at=utc_now())
+            )
+            database.execute(statement)
+            database.commit()
+            return database.get(ChatSession, session_id)
+    except SQLAlchemyError as error:
+        _database_warning("session assignment", error)
         return None
 
 
@@ -77,13 +125,18 @@ def save_chat_message(
         return None
 
 
-def list_chat_sessions() -> list[ChatSession]:
+def list_chat_sessions(user_id: UUID | None = None) -> list[ChatSession]:
     try:
         with database_session() as database:
             if database is None:
                 return []
 
-            statement = select(ChatSession).order_by(ChatSession.updated_at.desc())
+            statement = select(ChatSession)
+            if user_id is None:
+                statement = statement.where(ChatSession.user_id.is_(None))
+            else:
+                statement = statement.where(ChatSession.user_id == user_id)
+            statement = statement.order_by(ChatSession.updated_at.desc())
             return list(database.scalars(statement).all())
     except SQLAlchemyError as error:
         _database_warning("session listing", error)

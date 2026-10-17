@@ -29,30 +29,41 @@ def _user_read(user: User) -> UserRead:
     )
 
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
-) -> User:
-    credentials_error = HTTPException(
+def _credentials_error() -> HTTPException:
+    return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired access token",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> User:
     if credentials is None or credentials.scheme.lower() != "bearer":
-        raise credentials_error
+        raise _credentials_error()
 
     subject = decode_access_token(credentials.credentials)
     if subject is None:
-        raise credentials_error
+        raise _credentials_error()
 
     try:
         user_id = UUID(subject)
     except ValueError as error:
-        raise credentials_error from error
+        raise _credentials_error() from error
 
     user = get_user_by_id(user_id)
     if user is None or not user.is_active:
-        raise credentials_error
+        raise _credentials_error()
     return user
+
+
+def get_optional_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> User | None:
+    if credentials is None:
+        return None
+    return get_current_user(credentials)
 
 
 @router.post("/register", response_model=UserRead, status_code=201)
